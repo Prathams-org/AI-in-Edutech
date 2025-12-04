@@ -6,7 +6,7 @@ import {
   User,
   UserCredential,
 } from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp, collection, getDocs, query, where } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
 // Types
@@ -27,7 +27,30 @@ export interface TeacherData {
   name: string;
   email: string;
   role: "teacher";
+  classrooms?: string[];
   createdAt: any;
+}
+
+export interface CollaborationRequest {
+  id: string;
+  classroomSlug: string;
+  requesterId: string;
+  requesterName: string;
+  requesterEmail: string;
+  status: "pending" | "accepted" | "rejected";
+  createdAt: any;
+  acceptedAt?: any;
+}
+
+export interface StudentInClassroom {
+  id: string;
+  name: string;
+  email: string;
+  std?: string;
+  div?: string;
+  rollNo?: string;
+  status: "pending" | "joined";
+  joinedAt?: any;
 }
 
 export interface ValidationError {
@@ -186,6 +209,7 @@ export async function registerTeacher(
     await setDoc(doc(db, "teachers", userCredential.user.uid), {
       ...teacherData,
       role: "teacher",
+      classrooms: [],
       createdAt: serverTimestamp(),
     });
 
@@ -352,6 +376,7 @@ export async function createClassroom(
       requiresPermission,
       teacherId,
       teacherName: teacherName,
+      students: [],
       createdAt: serverTimestamp(),
       slug,
     });
@@ -422,5 +447,317 @@ export async function getClassroomBySlug(
     };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to fetch classroom" };
+  }
+}
+
+// Teacher Collaboration Functions
+export async function getTeacherByEmail(
+  email: string
+): Promise<{ success: boolean; teacher?: TeacherData & { uid: string }; error?: string }> {
+  try {
+    const teachersRef = collection(db, "teachers");
+    const q = query(teachersRef, where("email", "==", email));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      return { success: false, error: "Teacher not found" };
+    }
+
+    const teacherDoc = querySnapshot.docs[0];
+    return {
+      success: true,
+      teacher: { uid: teacherDoc.id, ...teacherDoc.data() } as TeacherData & { uid: string },
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to fetch teacher" };
+  }
+}
+
+export async function sendCollaborationRequest(
+  classroomSlug: string,
+  targetTeacherId: string,
+  requesterId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Get requester data
+    const requesterDoc = await getDoc(doc(db, "teachers", requesterId));
+    if (!requesterDoc.exists()) {
+      return { success: false, error: "Requester not found" };
+    }
+
+    const requesterData = requesterDoc.data() as TeacherData;
+
+    // Get classroom data
+    const classroomDoc = await getDoc(doc(db, "classrooms", classroomSlug));
+    if (!classroomDoc.exists()) {
+      return { success: false, error: "Classroom not found" };
+    }
+
+    // Check if teacher already has access
+    const targetTeacherDoc = await getDoc(doc(db, "teachers", targetTeacherId));
+    if (targetTeacherDoc.exists()) {
+      const targetClassrooms = targetTeacherDoc.data().classrooms || [];
+      if (targetClassrooms.includes(classroomSlug)) {
+        return { success: false, error: "Teacher already has access to this classroom" };
+      }
+    }
+
+    // Check if request already exists
+    const existingRequestRef = doc(db, "classrooms", classroomSlug, "requests", requesterId);
+    const existingRequest = await getDoc(existingRequestRef);
+    if (existingRequest.exists() && existingRequest.data().status === "pending") {
+      return { success: false, error: "Request already sent" };
+    }
+
+    // Create request in classroom's requests subcollection
+    const requestRef = doc(db, "classrooms", classroomSlug, "requests", requesterId);
+    await setDoc(requestRef, {
+      classroomSlug,
+      requesterId,
+      requesterName: requesterData.name,
+      requesterEmail: requesterData.email,
+      status: "pending",
+      createdAt: serverTimestamp(),
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to send request" };
+  }
+}
+
+export async function addTeacherDirectly(
+  classroomSlug: string,
+  targetTeacherId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Check if teacher already has access
+    const targetTeacherDoc = await getDoc(doc(db, "teachers", targetTeacherId));
+    if (targetTeacherDoc.exists()) {
+      const targetClassrooms = targetTeacherDoc.data().classrooms || [];
+      if (targetClassrooms.includes(classroomSlug)) {
+        return { success: false, error: "Teacher already has access to this classroom" };
+      }
+      
+      // Add classroom to teacher's classrooms array
+      await setDoc(
+        doc(db, "teachers", targetTeacherId),
+        { classrooms: [...targetClassrooms, classroomSlug] },
+        { merge: true }
+      );
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to add teacher" };
+  }
+}
+
+export async function cancelCollaborationRequest(
+  classroomSlug: string,
+  requestId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const requestRef = doc(db, "classrooms", classroomSlug, "requests", requestId);
+    await setDoc(
+      requestRef,
+      {
+        status: "cancelled",
+      },
+      { merge: true }
+    );
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to cancel request" };
+  }
+}
+
+export async function getCollaborationRequests(
+  classroomSlug: string
+): Promise<{ success: boolean; requests?: CollaborationRequest[]; error?: string }> {
+  try {
+    const requestsRef = collection(db, "classrooms", classroomSlug, "requests");
+    const querySnapshot = await getDocs(requestsRef);
+
+    const requests: CollaborationRequest[] = [];
+    querySnapshot.forEach((doc) => {
+      requests.push({
+        id: doc.id,
+        ...doc.data(),
+      } as CollaborationRequest);
+    });
+
+    return { success: true, requests };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to fetch requests" };
+  }
+}
+
+export async function acceptCollaborationRequest(
+  classroomSlug: string,
+  requestId: string,
+  requesterId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Update request status
+    const requestRef = doc(db, "classrooms", classroomSlug, "requests", requestId);
+    await setDoc(
+      requestRef,
+      {
+        status: "accepted",
+        acceptedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    // Add classroom to teacher's classrooms array
+    const teacherRef = doc(db, "teachers", requesterId);
+    const teacherDoc = await getDoc(teacherRef);
+
+    if (teacherDoc.exists()) {
+      const currentClassrooms = teacherDoc.data().classrooms || [];
+      if (!currentClassrooms.includes(classroomSlug)) {
+        await setDoc(
+          teacherRef,
+          { classrooms: [...currentClassrooms, classroomSlug] },
+          { merge: true }
+        );
+      }
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to accept request" };
+  }
+}
+
+export async function rejectCollaborationRequest(
+  classroomSlug: string,
+  requestId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const requestRef = doc(db, "classrooms", classroomSlug, "requests", requestId);
+    await setDoc(
+      requestRef,
+      {
+        status: "rejected",
+      },
+      { merge: true }
+    );
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to reject request" };
+  }
+}
+
+// Student Management Functions
+export async function getClassroomStudents(
+  classroomSlug: string
+): Promise<{ success: boolean; students?: StudentInClassroom[]; requiresPermission?: boolean; error?: string }> {
+  try {
+    const classroomDoc = await getDoc(doc(db, "classrooms", classroomSlug));
+    if (!classroomDoc.exists()) {
+      return { success: false, error: "Classroom not found" };
+    }
+
+    const classroomData = classroomDoc.data();
+    const studentIds = classroomData.students || [];
+    const requiresPermission = classroomData.requiresPermission || false;
+
+    if (studentIds.length === 0) {
+      return { success: true, students: [], requiresPermission };
+    }
+
+    const studentsPromises = studentIds.map(async (studentEntry: any) => {
+      const studentId = typeof studentEntry === "string" ? studentEntry : studentEntry.id;
+      const status = typeof studentEntry === "string" ? "joined" : studentEntry.status || "joined";
+      
+      const studentDoc = await getDoc(doc(db, "students", studentId));
+      if (studentDoc.exists()) {
+        const studentData = studentDoc.data() as StudentData;
+        return {
+          id: studentId,
+          name: studentData.name,
+          email: studentData.parentEmail,
+          std: studentData.std,
+          div: studentData.div,
+          rollNo: studentData.rollNo,
+          status,
+          joinedAt: studentEntry.joinedAt || null,
+        } as StudentInClassroom;
+      }
+      return null;
+    });
+
+    const studentsData = await Promise.all(studentsPromises);
+    const students = studentsData.filter((s) => s !== null) as StudentInClassroom[];
+
+    return { success: true, students, requiresPermission };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to fetch students" };
+  }
+}
+
+export async function updateClassroomPermission(
+  classroomSlug: string,
+  requiresPermission: boolean
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const classroomRef = doc(db, "classrooms", classroomSlug);
+    await setDoc(classroomRef, { requiresPermission }, { merge: true });
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to update permission" };
+  }
+}
+
+export async function acceptStudentRequest(
+  classroomSlug: string,
+  studentId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const classroomRef = doc(db, "classrooms", classroomSlug);
+    const classroomDoc = await getDoc(classroomRef);
+
+    if (!classroomDoc.exists()) {
+      return { success: false, error: "Classroom not found" };
+    }
+
+    const students = classroomDoc.data().students || [];
+    const updatedStudents = students.map((s: any) =>
+      s.id === studentId ? { ...s, status: "joined", joinedAt: serverTimestamp() } : s
+    );
+
+    await setDoc(classroomRef, { students: updatedStudents }, { merge: true });
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to accept student" };
+  }
+}
+
+export async function rejectStudentRequest(
+  classroomSlug: string,
+  studentId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const classroomRef = doc(db, "classrooms", classroomSlug);
+    const classroomDoc = await getDoc(classroomRef);
+
+    if (!classroomDoc.exists()) {
+      return { success: false, error: "Classroom not found" };
+    }
+
+    const students = classroomDoc.data().students || [];
+    const updatedStudents = students.filter((s: any) => s.id !== studentId);
+
+    await setDoc(classroomRef, { students: updatedStudents }, { merge: true });
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to reject student" };
   }
 }

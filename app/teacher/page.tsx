@@ -6,6 +6,9 @@ import { useAuth } from "@/lib/AuthContext";
 import { getTeacherClassrooms, createClassroom, Classroom, logout } from "@/lib/auth";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Collaborate from "@/components/teacher/Collaborate";
+import { BookOpen, Users } from "lucide-react";
 
 export default function TeacherClassroomsPage() {
   const router = useRouter();
@@ -105,8 +108,8 @@ export default function TeacherClassroomsPage() {
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">My Classrooms</h1>
-              <p className="text-gray-600 mt-1">Manage your teaching spaces</p>
+              <h1 className="text-3xl font-bold text-gray-800">Teacher Dashboard</h1>
+              <p className="text-gray-600 mt-1">Manage your classrooms and collaborate</p>
             </div>
             <button
               onClick={handleLogout}
@@ -117,7 +120,22 @@ export default function TeacherClassroomsPage() {
           </div>
         </div>
 
-        {/* Classrooms Grid */}
+        {/* Tabs */}
+        <Tabs defaultValue="classrooms" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-white p-1 rounded-lg shadow">
+            <TabsTrigger value="classrooms" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+              <BookOpen className="w-4 h-4" />
+              My Classrooms
+            </TabsTrigger>
+            <TabsTrigger value="collaborate" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+              <Users className="w-4 h-4" />
+              Collaborate
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Classrooms Tab */}
+          <TabsContent value="classrooms" className="space-y-6">
+
         {classrooms.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
             <div className="text-6xl mb-4">📚</div>
@@ -182,6 +200,19 @@ export default function TeacherClassroomsPage() {
             </div>
           </>
         )}
+          </TabsContent>
+
+          {/* Collaborate Tab */}
+          <TabsContent value="collaborate">
+            {user && (
+              <Collaborate 
+                userId={user.uid} 
+                classrooms={classrooms} 
+                onUpdate={loadClassrooms}
+              />
+            )}
+          </TabsContent>
+        </Tabs>
 
         {/* Create Classroom Modal */}
         {showModal && (

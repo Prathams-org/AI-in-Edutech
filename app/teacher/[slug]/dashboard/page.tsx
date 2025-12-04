@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getClassroomBySlug, Classroom, logout } from "@/lib/auth";
 import Overview from "@/components/teacher/Overview";
@@ -15,6 +15,7 @@ type TabType = "overview" | "timetable" | "students" | "content" | "exam";
 export default function ClassroomDashboard() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = params.slug as string;
   const { user, loading: authLoading } = useAuth();
   const [classroom, setClassroom] = useState<Classroom | null>(null);
@@ -22,6 +23,14 @@ export default function ClassroomDashboard() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Handle tab query parameter
+  useEffect(() => {
+    const tabParam = searchParams.get("tab") as TabType | null;
+    if (tabParam && ["overview", "timetable", "students", "content", "exam"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!authLoading && user && slug) {
