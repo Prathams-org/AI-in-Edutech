@@ -72,7 +72,7 @@ export default function StudentDashboard() {
                   <p><span className="font-semibold">Class:</span> {studentData.std} - {studentData.div}</p>
                   <p><span className="font-semibold">Roll No:</span> {studentData.rollNo}</p>
                   <p><span className="font-semibold">School:</span> {studentData.school}</p>
-                  <p><span className="font-semibold">Email:</span> {studentData.email}</p>
+                  <p><span className="font-semibold">Parent Email:</span> {studentData.parentEmail}</p>
                 </div>
               </div>
 

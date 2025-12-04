@@ -9,7 +9,6 @@ export default function StudentRegisterPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
     std: "",
     div: "",
     rollNo: "",
@@ -51,13 +50,12 @@ export default function StudentRegisterPage() {
       const result = await registerStudent(
         {
           name: formData.name,
-          email: formData.email,
+          parentEmail: formData.parentEmail,
           std: formData.std,
           div: formData.div,
           rollNo: formData.rollNo,
           school: formData.school,
           parentsNo: formData.parentsNo,
-          parentEmail: formData.parentEmail,
           gender: formData.gender,
         },
         formData.password
@@ -106,7 +104,7 @@ export default function StudentRegisterPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Personal Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
+            <div className="md:col-span-2">
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                 Full Name <span className="text-red-500">*</span>
               </label>
@@ -120,22 +118,6 @@ export default function StudentRegisterPage() {
                 placeholder="Enter your full name"
               />
               {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none text-gray-800"
-                placeholder="your.email@example.com"
-              />
-              {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
             </div>
 
             <div>
@@ -222,6 +204,23 @@ export default function StudentRegisterPage() {
             </div>
 
             {/* Parent Information */}
+            <div className="md:col-span-2">
+              <label htmlFor="parentEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                Parent's Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                id="parentEmail"
+                name="parentEmail"
+                value={formData.parentEmail}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none text-gray-800"
+                placeholder="parent@example.com"
+              />
+              <p className="mt-1 text-xs text-gray-500">This email will be used for login</p>
+              {errors.parentEmail && <p className="mt-1 text-sm text-red-600">{errors.parentEmail}</p>}
+            </div>
+
             <div>
               <label htmlFor="parentsNo" className="block text-sm font-medium text-gray-700 mb-2">
                 Parent's Mobile Number <span className="text-red-500">*</span>
@@ -237,22 +236,6 @@ export default function StudentRegisterPage() {
                 placeholder="10-digit mobile number"
               />
               {errors.parentsNo && <p className="mt-1 text-sm text-red-600">{errors.parentsNo}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="parentEmail" className="block text-sm font-medium text-gray-700 mb-2">
-                Parent's Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                id="parentEmail"
-                name="parentEmail"
-                value={formData.parentEmail}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none text-gray-800"
-                placeholder="parent@example.com"
-              />
-              {errors.parentEmail && <p className="mt-1 text-sm text-red-600">{errors.parentEmail}</p>}
             </div>
 
             {/* Password */}

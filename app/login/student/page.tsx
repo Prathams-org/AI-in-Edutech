@@ -84,7 +84,7 @@ export default function StudentLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
+                Parent's Email Address
               </label>
               <input
                 type="email"
@@ -93,7 +93,7 @@ export default function StudentLoginPage() {
                 value={formData.email}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none text-gray-800"
-                placeholder="your.email@example.com"
+                placeholder="parent@example.com"
               />
               {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
             </div>

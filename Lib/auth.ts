@@ -12,13 +12,12 @@ import { auth, db } from "./firebase";
 // Types
 export interface StudentData {
   name: string;
-  email: string;
+  parentEmail: string;
   std: string;
   div: string;
   rollNo: string;
   school: string;
   parentsNo: string;
-  parentEmail: string;
   gender: string;
   role: "student";
   createdAt: any;
@@ -58,10 +57,10 @@ export function validateStudentData(data: Omit<StudentData, "role" | "createdAt"
     errors.push({ field: "name", message: "Name is required" });
   }
 
-  if (!data.email.trim()) {
-    errors.push({ field: "email", message: "Email is required" });
-  } else if (!validateEmail(data.email)) {
-    errors.push({ field: "email", message: "Invalid email format" });
+  if (!data.parentEmail.trim()) {
+    errors.push({ field: "parentEmail", message: "Parent's email is required" });
+  } else if (!validateEmail(data.parentEmail)) {
+    errors.push({ field: "parentEmail", message: "Invalid parent email format" });
   }
 
   if (!data.std.trim()) {
@@ -84,12 +83,6 @@ export function validateStudentData(data: Omit<StudentData, "role" | "createdAt"
     errors.push({ field: "parentsNo", message: "Parent's number is required" });
   } else if (!validatePhone(data.parentsNo)) {
     errors.push({ field: "parentsNo", message: "Invalid phone number (10 digits required)" });
-  }
-
-  if (!data.parentEmail.trim()) {
-    errors.push({ field: "parentEmail", message: "Parent's email is required" });
-  } else if (!validateEmail(data.parentEmail)) {
-    errors.push({ field: "parentEmail", message: "Invalid parent email format" });
   }
 
   if (!data.gender) {
@@ -132,16 +125,16 @@ export async function registerStudent(
       return { success: false, error: validationErrors[0].message };
     }
 
-    // Check if user is already a teacher
-    const teacherDoc = await getDoc(doc(db, "teachers", studentData.email));
+    // Check if parent email is already a teacher
+    const teacherDoc = await getDoc(doc(db, "teachers", studentData.parentEmail));
     if (teacherDoc.exists()) {
       return { success: false, error: "This email is already registered as a teacher. Teachers cannot register as students." };
     }
 
-    // Create user
+    // Create user with parent email
     const userCredential: UserCredential = await createUserWithEmailAndPassword(
       auth,
-      studentData.email,
+      studentData.parentEmail,
       password
     );
 
@@ -312,6 +305,7 @@ export interface Classroom {
   school?: string;
   requiresPermission: boolean;
   teacherId: string;
+  teacherName: string;
   createdAt: any;
   slug: string;
 }
@@ -325,8 +319,18 @@ export function generateSlug(name: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+export function generateUniqueId(): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < 4; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 export async function createClassroom(
   teacherId: string,
+  teacherName: string,
   name: string,
   school?: string,
   requiresPermission: boolean = false
@@ -336,14 +340,10 @@ export async function createClassroom(
       return { success: false, error: "Classroom name is required" };
     }
 
-    const slug = generateSlug(name);
+    const baseSlug = generateSlug(name);
+    const uniqueId = generateUniqueId();
+    const slug = `${baseSlug}-${uniqueId}`;
     const classroomRef = doc(db, "classrooms", slug);
-
-    // Check if classroom with this slug already exists
-    const existingClassroom = await getDoc(classroomRef);
-    if (existingClassroom.exists()) {
-      return { success: false, error: "A classroom with this name already exists" };
-    }
 
     // Create classroom document
     await setDoc(classroomRef, {
@@ -351,6 +351,7 @@ export async function createClassroom(
       school: school?.trim() || "",
       requiresPermission,
       teacherId,
+      teacherName: teacherName,
       createdAt: serverTimestamp(),
       slug,
     });

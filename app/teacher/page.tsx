@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getTeacherClassrooms, createClassroom, Classroom, logout } from "@/lib/auth";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function TeacherClassroomsPage() {
   const router = useRouter();
@@ -18,12 +20,24 @@ export default function TeacherClassroomsPage() {
   });
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
+  const [teacherName, setTeacherName] = useState("");
 
   useEffect(() => {
     if (!authLoading && user) {
+      loadTeacherData();
       loadClassrooms();
     }
   }, [authLoading, user]);
+
+  const loadTeacherData = async () => {
+    if (!user) return;
+    const { doc: docRef, getDoc: getDocFunc } = await import("firebase/firestore");
+    const { db } = await import("@/lib/firebase");
+    const teacherDoc = await getDocFunc(docRef(db, "teachers", user.uid));
+    if (teacherDoc.exists()) {
+      setTeacherName(teacherDoc.data().name || "");
+    }
+  };
 
   const loadClassrooms = async () => {
     if (!user) return;
@@ -50,6 +64,7 @@ export default function TeacherClassroomsPage() {
     setCreating(true);
     const result = await createClassroom(
       user.uid,
+      teacherName,
       formData.name,
       formData.school,
       formData.requiresPermission
@@ -204,18 +219,16 @@ export default function TeacherClassroomsPage() {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id="permission"
                     checked={formData.requiresPermission}
-                    onChange={(e) =>
-                      setFormData({ ...formData, requiresPermission: e.target.checked })
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, requiresPermission: checked as boolean })
                     }
-                    className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
                   />
-                  <label htmlFor="permission" className="text-sm text-gray-700">
+                  <Label htmlFor="permission" className="text-sm text-gray-700 cursor-pointer">
                     Students need permission to join
-                  </label>
+                  </Label>
                 </div>
 
                 {error && (
