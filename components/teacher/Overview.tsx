@@ -62,10 +62,6 @@ export default function Overview({ classroom }: OverviewProps) {
           </div>
         </div>
 
-
-
-
-
       </div>
 
     </div>
