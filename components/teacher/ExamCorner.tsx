@@ -136,6 +136,46 @@ export default function ExamCorner() {
     setEntries(deduped);
   };
 
+  // Validation: date must be strictly after today's date (local)
+  const getLocalYMD = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const validateEntries = () => {
+    const errors: string[] = [];
+    const today = getLocalYMD();
+    if (!entries || entries.length === 0) {
+      errors.push("Add at least one subject entry.");
+      return errors;
+    }
+
+    entries.forEach((e, idx) => {
+      const n = idx + 1;
+      if (!e.subject || !e.subject.trim()) errors.push(`Entry ${n}: Subject is required.`);
+      if (!e.date || !e.date.trim()) errors.push(`Entry ${n}: Date is required.`);
+      else if (e.date <= today) errors.push(`Entry ${n}: Date must be after today.`);
+      if (!e.time || !e.time.trim()) errors.push(`Entry ${n}: Time is required.`);
+    });
+
+    return errors;
+  };
+
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [isFormValid, setIsFormValid] = useState(false);
+
+  useEffect(() => {
+    // validate when entries or examTitle change
+    const errs: string[] = [];
+    if (!examTitle || !examTitle.trim()) errs.push("Exam name is required.");
+    const entryErrs = validateEntries();
+    setValidationErrors([...errs, ...entryErrs]);
+    setIsFormValid(errs.length + entryErrs.length === 0);
+  }, [entries, examTitle]);
+
   const addEntry = () => {
     setEntries((s) => [
       ...s,
@@ -200,10 +240,15 @@ export default function ExamCorner() {
 
   const saveTemplate = async () => {
     if (!classroomSlug) return;
-
-    // Validation: Require Exam Name
-    if (!examTitle.trim()) {
-      alert("Please enter a name for this exam template.");
+    // run validation
+    const errs: string[] = [];
+    if (!examTitle.trim()) errs.push("Please enter a name for this exam template.");
+    const entryErrs = validateEntries();
+    if (entryErrs.length) errs.push(...entryErrs);
+    if (errs.length) {
+      setValidationErrors(errs);
+      // focus remains in modal; show alert as well
+      alert("Please fix validation errors before saving.");
       return;
     }
 
@@ -396,6 +441,14 @@ export default function ExamCorner() {
                   </div>
                 </div>
 
+                {validationErrors.length > 0 && (
+                  <div className="mb-2">
+                    {validationErrors.map((err, i) => (
+                      <div key={i} className="text-sm text-red-600">{err}</div>
+                    ))}
+                  </div>
+                )}
+
                 <DialogFooter>
                   <div className="flex items-center gap-2">
                     {editingTemplateId && (
@@ -417,7 +470,7 @@ export default function ExamCorner() {
                       Cancel
                     </Button>
                   </DialogClose>
-                  <Button onClick={saveTemplate} disabled={saving}>
+                  <Button onClick={saveTemplate} disabled={saving || !isFormValid}>
                     {saving ? "Saving..." : "Save Template"}
                   </Button>
                 </DialogFooter>
