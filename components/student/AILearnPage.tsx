@@ -10,6 +10,7 @@ import { db } from "@/lib/firebase";
 interface ChatMetadata {
   chatId: string;
   title: string;
+  testsCompleted: number;
   mode: "user-topic" | "student-content" | "teacher-content";
   subjects?: string[];
   chapters?: string[];
@@ -103,38 +104,73 @@ export default function AILearnPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-6 border-l-4 border-green-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-semibold">Completed</p>
-                <p className="text-3xl font-bold text-green-600">{stats.completed}</p>
+                <p className="text-green-800 text-sm font-semibold">Completed</p>
+                <p className="text-4xl font-bold text-green-600 mt-1">{stats.completed}</p>
+                <p className="text-xs text-green-600 mt-1">Learning sessions</p>
               </div>
-              <CheckCircle className="w-12 h-12 text-green-500 opacity-20" />
+              <CheckCircle className="w-14 h-14 text-green-500 opacity-30" />
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-semibold">In Progress</p>
-                <p className="text-3xl font-bold text-blue-600">{stats.inProgress}</p>
+                <p className="text-blue-800 text-sm font-semibold">In Progress</p>
+                <p className="text-4xl font-bold text-blue-600 mt-1">{stats.inProgress}</p>
+                <p className="text-xs text-blue-600 mt-1">Active sessions</p>
               </div>
-              <Clock className="w-12 h-12 text-blue-500 opacity-20" />
+              <Zap className="w-14 h-14 text-blue-500 opacity-30" />
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-semibold">Total Learning</p>
-                <p className="text-3xl font-bold text-purple-600">{stats.totalTime} min</p>
+                <p className="text-purple-800 text-sm font-semibold">Total Time</p>
+                <p className="text-4xl font-bold text-purple-600 mt-1">{stats.totalTime}</p>
+                <p className="text-xs text-purple-600 mt-1">Minutes learned</p>
               </div>
-              <Trophy className="w-12 h-12 text-purple-500 opacity-20" />
+              <Clock className="w-14 h-14 text-purple-500 opacity-30" />
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-800 text-sm font-semibold">Total Sessions</p>
+                <p className="text-4xl font-bold text-orange-600 mt-1">{chats.length}</p>
+                <p className="text-xs text-orange-600 mt-1">All workspaces</p>
+              </div>
+              <Trophy className="w-14 h-14 text-orange-500 opacity-30" />
             </div>
           </div>
         </div>
 
+        {/* Filter Tabs */}
+        <div className="mb-6">
+          <div className="flex flex-wrap gap-2">
+            {modes.map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setSelectedMode(mode)}
+                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                  selectedMode === mode
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                    : "bg-white text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {mode === "all" && "All Sessions"}
+                {mode === "user-topic" && "AI Generated"}
+                {mode === "student-content" && "My Content"}
+                {mode === "teacher-content" && "Teacher Content"}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Chats */}
         <div className="space-y-4">
@@ -192,12 +228,18 @@ export default function AILearnPage() {
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
-                        {chat.timeGiven > 0 ? `${chat.timeGiven} min` : "Not started"}
+                        {chat.timeGiven > 0 ? `${chat.timeGiven} min learned` : "Not started"}
                       </div>
                       <div className="flex items-center gap-1">
                         <Zap className="w-4 h-4" />
-                        Created: {createdDate}
+                        {createdDate}
                       </div>
+                      {chat.testsCompleted > 0 && (
+                        <div className="flex items-center gap-1 text-orange-600">
+                          <Trophy className="w-4 h-4" />
+                          {chat.testsCompleted} test{chat.testsCompleted > 1 ? 's' : ''} completed
+                        </div>
+                      )}
                     </div>
                   </div>
 
