@@ -2,9 +2,12 @@
 import mammoth from "mammoth";
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Initialize PDF.js worker
+// Initialize PDF.js worker - use local installation
 if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+  ).toString();
 }
 
 export async function parseDocument(file: File): Promise<string> {

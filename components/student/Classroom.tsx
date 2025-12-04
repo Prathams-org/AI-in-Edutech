@@ -1,193 +1,432 @@
 "use client";
 
-import React, { useState } from "react";
-import { Users, Plus, Clock, BookOpen, Link2, Settings } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/lib/AuthContext";
+import {
+  searchClassrooms,
+  joinClassroom,
+  withdrawClassroomRequest,
+  getStudentClassrooms,
+  Classroom as ClassroomType,
+} from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import {
+  Users,
+  Plus,
+  Clock,
+  BookOpen,
+  Search,
+  School,
+  Check,
+  X,
+  Loader2,
+  UserCheck,
+  AlertCircle,
+} from "lucide-react";
 
-interface Classroom {
-  id: string;
-  name: string;
-  teacher: string;
-  code: string;
-  subject: string;
-  students: number;
-  joinedDate: string;
-  status: "active" | "archived";
+interface ClassroomWithStatus extends ClassroomType {
+  status?: string;
+  joinedAt?: any;
 }
 
-interface ClassroomProps {
-  classrooms?: Classroom[];
-}
+export default function Classroom() {
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<"my-classes" | "search">("my-classes");
+  const [myClassrooms, setMyClassrooms] = useState<ClassroomWithStatus[]>([]);
+  const [searchResults, setSearchResults] = useState<ClassroomType[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
+  const [joiningClassroom, setJoiningClassroom] = useState<string | null>(null);
+  const [message, setMessage] = useState({ type: "", text: "" });
 
-export default function Classroom({ classrooms }: ClassroomProps) {
-  const [showJoinDialog, setShowJoinDialog] = useState(false);
-  const [classCode, setClassCode] = useState("");
+  useEffect(() => {
+    if (user) {
+      loadMyClassrooms();
+    }
+  }, [user]);
 
-  const defaultClassrooms: Classroom[] = [
-    {
-      id: "1",
-      name: "Mathematics 101",
-      teacher: "Mr. Kumar",
-      code: "MATH101",
-      subject: "Mathematics",
-      students: 35,
-      joinedDate: "2024-01-15",
-      status: "active",
-    },
-    {
-      id: "2",
-      name: "English Literature",
-      teacher: "Mrs. Sharma",
-      code: "ENG202",
-      subject: "English",
-      students: 28,
-      joinedDate: "2024-01-20",
-      status: "active",
-    },
-    {
-      id: "3",
-      name: "Science Lab",
-      teacher: "Dr. Patel",
-      code: "SCI303",
-      subject: "Science",
-      students: 42,
-      joinedDate: "2024-02-01",
-      status: "active",
-    },
-  ];
+  const loadMyClassrooms = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const result = await getStudentClassrooms(user.uid);
+      if (result.success) {
+        setMyClassrooms(result.classrooms || []);
+      }
+    } catch (error) {
+      console.error("Error loading classrooms:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const rooms = classrooms || defaultClassrooms;
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      setMessage({ type: "error", text: "Please enter a search term" });
+      return;
+    }
+
+    try {
+      setSearching(true);
+      setMessage({ type: "", text: "" });
+      
+      const result = await searchClassrooms(searchQuery.trim());
+      if (result.success) {
+        setSearchResults(result.classrooms || []);
+        if (result.classrooms?.length === 0) {
+          setMessage({ type: "info", text: "No classrooms found matching your search" });
+        }
+      } else {
+        setMessage({ type: "error", text: result.error || "Failed to search" });
+      }
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message || "Failed to search" });
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleJoinClassroom = async (classroomSlug: string) => {
+    if (!user) return;
+
+    try {
+      setJoiningClassroom(classroomSlug);
+      setMessage({ type: "", text: "" });
+
+      const result = await joinClassroom(user.uid, classroomSlug);
+      
+      if (result.success) {
+        const classroom = searchResults.find(c => c.slug === classroomSlug);
+        const message = classroom?.requiresPermission 
+          ? "Request sent successfully! Waiting for teacher approval."
+          : "Successfully joined classroom!";
+        setMessage({ type: "success", text: message });
+        await loadMyClassrooms();
+        setActiveTab("my-classes");
+        setSearchQuery("");
+        setSearchResults([]);
+      } else {
+        setMessage({ type: "error", text: result.error || "Failed to join classroom" });
+      }
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message || "Failed to join classroom" });
+    } finally {
+      setJoiningClassroom(null);
+    }
+  };
+
+  const handleWithdrawRequest = async (classroomSlug: string) => {
+    if (!user) return;
+
+    try {
+      setJoiningClassroom(classroomSlug);
+      const result = await withdrawClassroomRequest(user.uid, classroomSlug);
+      
+      if (result.success) {
+        setMessage({ type: "success", text: "Request withdrawn successfully" });
+        await loadMyClassrooms();
+      } else {
+        setMessage({ type: "error", text: result.error || "Failed to withdraw request" });
+      }
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message || "Failed to withdraw request" });
+    } finally {
+      setJoiningClassroom(null);
+    }
+  };
+
+  const isAlreadyInClassroom = (classroomSlug: string) => {
+    return myClassrooms.some((c) => c.slug === classroomSlug);
+  };
+
+  const joinedClassrooms = myClassrooms.filter((c) => c.status === "joined");
+  const pendingClassrooms = myClassrooms.filter((c) => c.status === "pending");
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">My Classrooms</h1>
-            <p className="text-gray-600 mt-1">Manage your enrolled classes</p>
-          </div>
-          <button
-            onClick={() => setShowJoinDialog(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold"
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">My Classrooms</h1>
+          <p className="text-gray-600">Join and manage your enrolled classes</p>
+        </div>
+
+        {/* Message Alert */}
+        {message.text && (
+          <div
+            className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
+              message.type === "success"
+                ? "bg-green-50 text-green-700 border border-green-200"
+                : message.type === "error"
+                ? "bg-red-50 text-red-700 border border-red-200"
+                : "bg-blue-50 text-blue-700 border border-blue-200"
+            }`}
           >
-            <Plus className="w-5 h-5" />
-            Join Class
-          </button>
-        </div>
-
-        {/* Join Class Dialog */}
-        {showJoinDialog && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Join a Classroom</h2>
-              <p className="text-gray-600 mb-6">Enter the classroom code provided by your teacher</p>
-              
-              <input
-                type="text"
-                placeholder="Enter classroom code"
-                value={classCode}
-                onChange={(e) => setClassCode(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowJoinDialog(false);
-                    setClassCode("");
-                  }}
-                  className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg transition-colors font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setShowJoinDialog(false);
-                    setClassCode("");
-                  }}
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold"
-                >
-                  Join
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Classrooms Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {rooms.map((classroom) => (
-            <div
-              key={classroom.id}
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow p-6"
-            >
-              {/* Header */}
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-gray-800 mb-1">{classroom.name}</h3>
-                  <p className="text-sm text-gray-600">Code: {classroom.code}</p>
-                </div>
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Settings className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-
-              {/* Details */}
-              <div className="space-y-3 mb-6 py-4 border-t border-b border-gray-200">
-                <div className="flex items-center gap-3 text-sm">
-                  <BookOpen className="w-4 h-4 text-blue-600" />
-                  <span className="text-gray-700">
-                    <strong>Subject:</strong> {classroom.subject}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Users className="w-4 h-4 text-green-600" />
-                  <span className="text-gray-700">
-                    <strong>Students:</strong> {classroom.students}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Clock className="w-4 h-4 text-orange-600" />
-                  <span className="text-gray-700">
-                    <strong>Joined:</strong> {new Date(classroom.joinedDate).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Link2 className="w-4 h-4 text-purple-600" />
-                  <span className="text-gray-700">
-                    <strong>Teacher:</strong> {classroom.teacher}
-                  </span>
-                </div>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex gap-3">
-                <button className="flex-1 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors font-semibold text-sm">
-                  View
-                </button>
-                <button className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-semibold text-sm">
-                  Materials
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {rooms.length === 0 && (
-          <div className="text-center py-16 bg-white rounded-2xl">
-            <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">No Classrooms Yet</h2>
-            <p className="text-gray-600 mb-6">Join a classroom to get started</p>
+            <AlertCircle className="w-5 h-5" />
+            <span>{message.text}</span>
             <button
-              onClick={() => setShowJoinDialog(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold"
+              onClick={() => setMessage({ type: "", text: "" })}
+              className="ml-auto"
             >
-              <Plus className="w-5 h-5" />
-              Join Your First Class
+              <X className="w-5 h-5" />
             </button>
           </div>
         )}
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-white p-1 rounded-lg shadow">
+            <TabsTrigger
+              value="my-classes"
+              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              <BookOpen className="w-4 h-4" />
+              My Classes ({myClassrooms.length})
+            </TabsTrigger>
+            <TabsTrigger
+              value="search"
+              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              <Search className="w-4 h-4" />
+              Find Classes
+            </TabsTrigger>
+          </TabsList>
+
+          {/* My Classes Tab */}
+          <TabsContent value="my-classes" className="space-y-6">
+            {/* Subtabs for Joined and Pending */}
+            <Tabs defaultValue="joined">
+              <TabsList className="bg-white">
+                <TabsTrigger value="joined" className="flex items-center gap-2">
+                  <Check className="w-4 h-4" />
+                  Joined ({joinedClassrooms.length})
+                </TabsTrigger>
+                <TabsTrigger value="pending" className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Pending ({pendingClassrooms.length})
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Joined Classes */}
+              <TabsContent value="joined" className="mt-6">
+                {joinedClassrooms.length === 0 ? (
+                  <Card>
+                    <CardContent className="pt-12 pb-12 text-center">
+                      <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                        No Classes Yet
+                      </h3>
+                      <p className="text-gray-600 mb-6">
+                        Search and join a classroom to get started
+                      </p>
+                      <Button onClick={() => setActiveTab("search")}>
+                        <Search className="w-4 h-4 mr-2" />
+                        Find Classes
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {joinedClassrooms.map((classroom) => (
+                      <Card key={classroom.id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <CardTitle className="text-lg">{classroom.name}</CardTitle>
+                            <Badge variant="outline" className="text-green-700 border-green-300">
+                              <Check className="w-3 h-3 mr-1" />
+                              Active
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <UserCheck className="w-4 h-4 text-blue-600" />
+                            <span>Teacher: {classroom.teacherName}</span>
+                          </div>
+                          {classroom.school && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <School className="w-4 h-4 text-purple-600" />
+                              <span>{classroom.school}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Clock className="w-4 h-4 text-orange-600" />
+                            <span>
+                              Joined: {classroom.joinedAt ? new Date(classroom.joinedAt.seconds * 1000).toLocaleDateString() : "N/A"}
+                            </span>
+                          </div>
+                          <Button className="w-full mt-4" variant="outline">
+                            View Materials
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Pending Classes */}
+              <TabsContent value="pending" className="mt-6">
+                {pendingClassrooms.length === 0 ? (
+                  <Card>
+                    <CardContent className="pt-12 pb-12 text-center">
+                      <Clock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                        No Pending Requests
+                      </h3>
+                      <p className="text-gray-600">
+                        Your classroom join requests will appear here
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {pendingClassrooms.map((classroom) => (
+                      <Card key={classroom.id} className="border-yellow-200 bg-yellow-50">
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <CardTitle className="text-lg">{classroom.name}</CardTitle>
+                            <Badge variant="outline" className="text-yellow-700 border-yellow-300">
+                              <Clock className="w-3 h-3 mr-1" />
+                              Pending
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <UserCheck className="w-4 h-4 text-blue-600" />
+                            <span>Teacher: {classroom.teacherName}</span>
+                          </div>
+                          {classroom.school && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <School className="w-4 h-4 text-purple-600" />
+                              <span>{classroom.school}</span>
+                            </div>
+                          )}
+                          <p className="text-sm text-gray-600">
+                            Waiting for teacher approval
+                          </p>
+                          <Button
+                            className="w-full mt-4"
+                            variant="outline"
+                            onClick={() => handleWithdrawRequest(classroom.slug)}
+                            disabled={joiningClassroom === classroom.slug}
+                          >
+                            {joiningClassroom === classroom.slug ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <X className="w-4 h-4 mr-2" />
+                                Withdraw Request
+                              </>
+                            )}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+
+          {/* Search Tab */}
+          <TabsContent value="search" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Search for Classrooms</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Search by classroom name, school, or teacher..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                  />
+                  <Button onClick={handleSearch} disabled={searching}>
+                    {searching ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Search className="w-4 h-4 mr-2" />
+                        Search
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Search Results */}
+            {searchResults.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {searchResults.map((classroom) => {
+                  const alreadyJoined = isAlreadyInClassroom(classroom.slug);
+                  
+                  return (
+                    <Card key={classroom.id} className="hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                        <CardTitle className="text-lg">{classroom.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <UserCheck className="w-4 h-4 text-blue-600" />
+                          <span>Teacher: {classroom.teacherName}</span>
+                        </div>
+                        {classroom.school && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <School className="w-4 h-4 text-purple-600" />
+                            <span>{classroom.school}</span>
+                          </div>
+                        )}
+                        {classroom.requiresPermission && (
+                          <div className="flex items-center gap-2 text-xs text-yellow-700 bg-yellow-100 p-2 rounded">
+                            <AlertCircle className="w-4 h-4" />
+                            <span>Requires teacher approval</span>
+                          </div>
+                        )}
+                        <Button
+                          className="w-full mt-4"
+                          onClick={() => handleJoinClassroom(classroom.slug)}
+                          disabled={alreadyJoined || joiningClassroom === classroom.slug}
+                        >
+                          {joiningClassroom === classroom.slug ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : alreadyJoined ? (
+                            <>
+                              <Check className="w-4 h-4 mr-2" />
+                              Already Joined
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-4 h-4 mr-2" />
+                              {classroom.requiresPermission ? "Request to Join" : "Join Now"}
+                            </>
+                          )}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

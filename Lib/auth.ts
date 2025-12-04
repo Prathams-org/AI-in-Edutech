@@ -20,6 +20,11 @@ export interface StudentData {
   parentsNo: string;
   gender: string;
   role: "student";
+  classrooms?: Array<{
+    slug: string;
+    status: "joined" | "pending";
+    joinedAt?: any;
+  }>;
   createdAt: any;
 }
 
@@ -727,11 +732,24 @@ export async function acceptStudentRequest(
     }
 
     const students = classroomDoc.data().students || [];
+    const timestamp = Date.now();
     const updatedStudents = students.map((s: any) =>
-      s.id === studentId ? { ...s, status: "joined", joinedAt: serverTimestamp() } : s
+      s.id === studentId ? { ...s, status: "joined", joinedAt: timestamp } : s
     );
 
     await setDoc(classroomRef, { students: updatedStudents }, { merge: true });
+
+    // Update student document
+    const studentRef = doc(db, "students", studentId);
+    const studentDoc = await getDoc(studentRef);
+    
+    if (studentDoc.exists()) {
+      const studentClassrooms = studentDoc.data().classrooms || [];
+      const updatedClassrooms = studentClassrooms.map((c: any) =>
+        c.slug === classroomSlug ? { ...c, status: "joined", joinedAt: timestamp } : c
+      );
+      await setDoc(studentRef, { classrooms: updatedClassrooms }, { merge: true });
+    }
 
     return { success: true };
   } catch (error: any) {
@@ -756,8 +774,192 @@ export async function rejectStudentRequest(
 
     await setDoc(classroomRef, { students: updatedStudents }, { merge: true });
 
+    // Update student document
+    const studentRef = doc(db, "students", studentId);
+    const studentDoc = await getDoc(studentRef);
+    
+    if (studentDoc.exists()) {
+      const studentClassrooms = studentDoc.data().classrooms || [];
+      const updatedClassrooms = studentClassrooms.filter((c: any) => c.slug !== classroomSlug);
+      await setDoc(studentRef, { classrooms: updatedClassrooms }, { merge: true });
+    }
+
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to reject student" };
+  }
+}
+
+// Student Classroom Functions
+export async function searchClassrooms(
+  searchQuery: string
+): Promise<{ success: boolean; classrooms?: Classroom[]; error?: string }> {
+  try {
+    const classroomsRef = collection(db, "classrooms");
+    const querySnapshot = await getDocs(classroomsRef);
+
+    const classrooms: Classroom[] = [];
+    const searchLower = searchQuery.toLowerCase();
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const classroom = { id: doc.id, ...data } as Classroom;
+      
+      // Search by classroom name, school, or teacher name
+      if (
+        classroom.name.toLowerCase().includes(searchLower) ||
+        (classroom.school && classroom.school.toLowerCase().includes(searchLower)) ||
+        classroom.teacherName.toLowerCase().includes(searchLower)
+      ) {
+        classrooms.push(classroom);
+      }
+    });
+
+    return { success: true, classrooms };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to search classrooms" };
+  }
+}
+
+export async function joinClassroom(
+  studentId: string,
+  classroomSlug: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const classroomDoc = await getDoc(doc(db, "classrooms", classroomSlug));
+    if (!classroomDoc.exists()) {
+      return { success: false, error: "Classroom not found" };
+    }
+
+    const classroomData = classroomDoc.data();
+    const requiresPermission = classroomData.requiresPermission || false;
+    const students = classroomData.students || [];
+
+    // Check if student is already in the classroom
+    const existingStudent = students.find((s: any) => s.id === studentId);
+    if (existingStudent) {
+      return { success: false, error: "You are already in this classroom" };
+    }
+
+    const studentRef = doc(db, "students", studentId);
+    const studentDoc = await getDoc(studentRef);
+    
+    if (!studentDoc.exists()) {
+      return { success: false, error: "Student not found" };
+    }
+
+    const studentClassrooms = studentDoc.data().classrooms || [];
+    
+    // Check if already requested or joined
+    const existingEntry = studentClassrooms.find((c: any) => c.slug === classroomSlug);
+    if (existingEntry) {
+      if (existingEntry.status === "joined") {
+        return { success: false, error: "You are already in this classroom" };
+      } else {
+        return { success: false, error: "You have already requested to join this classroom" };
+      }
+    }
+
+    const status = requiresPermission ? "pending" : "joined";
+    const timestamp = Date.now();
+
+    // Add to classroom
+    const studentEntry = {
+      id: studentId,
+      status,
+      joinedAt: status === "joined" ? timestamp : null,
+    };
+    
+    await setDoc(
+      doc(db, "classrooms", classroomSlug),
+      { students: [...students, studentEntry] },
+      { merge: true }
+    );
+
+    // Add to student document
+    const classroomEntry = {
+      slug: classroomSlug,
+      status,
+      joinedAt: status === "joined" ? timestamp : null,
+    };
+    
+    await setDoc(
+      studentRef,
+      { classrooms: [...studentClassrooms, classroomEntry] },
+      { merge: true }
+    );
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to join classroom" };
+  }
+}
+
+export async function withdrawClassroomRequest(
+  studentId: string,
+  classroomSlug: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Remove from classroom
+    const classroomRef = doc(db, "classrooms", classroomSlug);
+    const classroomDoc = await getDoc(classroomRef);
+
+    if (classroomDoc.exists()) {
+      const students = classroomDoc.data().students || [];
+      const updatedStudents = students.filter((s: any) => s.id !== studentId);
+      await setDoc(classroomRef, { students: updatedStudents }, { merge: true });
+    }
+
+    // Remove from student document
+    const studentRef = doc(db, "students", studentId);
+    const studentDoc = await getDoc(studentRef);
+
+    if (studentDoc.exists()) {
+      const classrooms = studentDoc.data().classrooms || [];
+      const updatedClassrooms = classrooms.filter((c: any) => c.slug !== classroomSlug);
+      await setDoc(studentRef, { classrooms: updatedClassrooms }, { merge: true });
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to withdraw request" };
+  }
+}
+
+export async function getStudentClassrooms(
+  studentId: string
+): Promise<{ success: boolean; classrooms?: Array<Classroom & { status: string; joinedAt?: any }>; error?: string }> {
+  try {
+    const studentDoc = await getDoc(doc(db, "students", studentId));
+    
+    if (!studentDoc.exists()) {
+      return { success: false, error: "Student not found" };
+    }
+
+    const studentClassrooms = studentDoc.data().classrooms || [];
+    
+    if (studentClassrooms.length === 0) {
+      return { success: true, classrooms: [] };
+    }
+
+    const classroomPromises = studentClassrooms.map(async (entry: any) => {
+      const classroomDoc = await getDoc(doc(db, "classrooms", entry.slug));
+      if (classroomDoc.exists()) {
+        return {
+          id: classroomDoc.id,
+          ...classroomDoc.data(),
+          status: entry.status,
+          joinedAt: entry.joinedAt,
+        } as Classroom & { status: string; joinedAt?: any };
+      }
+      return null;
+    });
+
+    const classroomData = await Promise.all(classroomPromises);
+    const classrooms = classroomData.filter((c) => c !== null) as Array<Classroom & { status: string; joinedAt?: any }>;
+
+    return { success: true, classrooms };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to fetch classrooms" };
   }
 }

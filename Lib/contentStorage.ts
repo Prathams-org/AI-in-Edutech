@@ -161,3 +161,126 @@ export async function getTopicContent(classroomSlug: string, topicId: string): P
     throw error;
   }
 }
+
+// Student-specific content functions
+export async function saveStudentContent(
+  userId: string,
+  parsedContent: ParsedContent
+): Promise<void> {
+  try {
+    const studentRef = doc(db, "students", userId);
+    const studentDoc = await getDoc(studentRef);
+
+    if (!studentDoc.exists()) {
+      throw new Error("Student not found");
+    }
+
+    const existingTree: ContentTree = studentDoc.data().contentTree || { subjects: {} };
+    const batch = writeBatch(db);
+    let batchCount = 0;
+
+    // Process each subject
+    for (const subject of parsedContent.subjects) {
+      const subjectTitle = subject.title;
+
+      // Initialize subject if it doesn't exist
+      if (!existingTree.subjects[subjectTitle]) {
+        existingTree.subjects[subjectTitle] = { chapters: {} };
+      }
+
+      // Process each chapter
+      for (const chapter of subject.chapters) {
+        const chapterTitle = chapter.title;
+
+        // Initialize chapter if it doesn't exist
+        if (!existingTree.subjects[subjectTitle].chapters[chapterTitle]) {
+          existingTree.subjects[subjectTitle].chapters[chapterTitle] = [];
+        }
+
+        // Process each topic
+        for (const topic of chapter.topics) {
+          let topicTitle = topic.title;
+
+          // Check for duplicates
+          const existingTopics = existingTree.subjects[subjectTitle].chapters[chapterTitle];
+          const duplicateCount = existingTopics.filter(t => t.title === topicTitle).length;
+          
+          if (duplicateCount > 0) {
+            topicTitle = `${topicTitle} (${duplicateCount + 1})`;
+          }
+
+          // Create document in student's content subcollection
+          const contentRef = doc(collection(db, "students", userId, "content"));
+          batch.set(contentRef, {
+            subject: subjectTitle,
+            chapter: chapterTitle,
+            topic: topicTitle,
+            content: topic.content,
+            // Indexed fields for faster queries
+            subjectLower: subjectTitle.toLowerCase(),
+            chapterLower: chapterTitle.toLowerCase(),
+            topicLower: topicTitle.toLowerCase(),
+            createdAt: serverTimestamp(),
+          });
+
+          // Add topic object (ID + title) to tree
+          existingTree.subjects[subjectTitle].chapters[chapterTitle].push({
+            id: contentRef.id,
+            title: topicTitle
+          });
+
+          batchCount++;
+
+          // Firestore batch limit is 500 operations
+          if (batchCount >= 450) {
+            await batch.commit();
+            batchCount = 0;
+          }
+        }
+      }
+    }
+
+    // Commit remaining batch operations
+    if (batchCount > 0) {
+      await batch.commit();
+    }
+
+    // Update student document with new content tree
+    await setDoc(studentRef, { contentTree: existingTree }, { merge: true });
+  } catch (error) {
+    console.error("Error saving student content to Firestore:", error);
+    throw error;
+  }
+}
+
+export async function getStudentContentTree(userId: string): Promise<ContentTree> {
+  try {
+    const studentRef = doc(db, "students", userId);
+    const studentDoc = await getDoc(studentRef);
+
+    if (!studentDoc.exists()) {
+      throw new Error("Student not found");
+    }
+
+    return studentDoc.data().contentTree || { subjects: {} };
+  } catch (error) {
+    console.error("Error getting student content tree:", error);
+    throw error;
+  }
+}
+
+export async function getStudentTopicContent(userId: string, topicId: string): Promise<any> {
+  try {
+    const topicRef = doc(db, "students", userId, "content", topicId);
+    const topicDoc = await getDoc(topicRef);
+
+    if (!topicDoc.exists()) {
+      throw new Error("Topic not found");
+    }
+
+    return topicDoc.data();
+  } catch (error) {
+    console.error("Error getting student topic content:", error);
+    throw error;
+  }
+}
