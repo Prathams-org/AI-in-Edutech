@@ -218,11 +218,9 @@ function TimetablePanel({ studentData }: { studentData: any }) {
   const [selectedDayIdx, setSelectedDayIdx] = useState(0);
 
   useEffect(() => {
-    // pick today (Mon-Sat) as default
-    const today = new Date().getDay(); // 0 Sun - 6 Sat
-    // map: Mon=1 -> idx 0
-    const map = {1:0,2:1,3:2,4:3,5:4,6:5};
-    setSelectedDayIdx(map[today as keyof typeof map] ?? 0);
+    // UPDATED: This now forces Monday (Index 0) on every refresh/load
+    // instead of calculating the current day.
+    setSelectedDayIdx(0); 
   }, []);
 
   useEffect(() => {
