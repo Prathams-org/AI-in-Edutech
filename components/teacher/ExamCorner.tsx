@@ -393,9 +393,6 @@ export default function ExamCorner() {
                     <Button variant="ghost" onClick={addEntry}>
                       + Add another subject
                     </Button>
-                    <Button variant="outline" onClick={removeDuplicateSubjects}>
-                      Remove duplicate subjects
-                    </Button>
                   </div>
                 </div>
 
