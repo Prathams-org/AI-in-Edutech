@@ -21,6 +21,7 @@ import { doc, updateDoc, arrayUnion, onSnapshot, getDoc } from "firebase/firesto
 type SyllabusSelection = {
   chapter: string;
   topics: string[];
+  topicIds?: string[]; // Document IDs for topics
 };
 
 type Entry = {
@@ -151,7 +152,7 @@ export default function ExamCorner() {
     setEntries((s) => s.map((e) => (e.id === id ? { ...e, ...patch } : e)));
   };
 
-  const toggleChapterTopic = (entryId: string, chapter: string, topic: string) => {
+  const toggleChapterTopic = (entryId: string, chapter: string, topic: string, topicId: string) => {
     setEntries((prev) =>
       prev.map((e) => {
         if (e.id !== entryId) return e;
@@ -159,11 +160,16 @@ export default function ExamCorner() {
         let chapterSel = sel.find((c) => c.chapter === chapter);
         if (!chapterSel) {
           // add chapter with this topic
-          sel.push({ chapter, topics: [topic] });
+          sel.push({ chapter, topics: [topic], topicIds: [topicId] });
         } else {
           const ix = chapterSel.topics.indexOf(topic);
-          if (ix === -1) chapterSel.topics = [...chapterSel.topics, topic];
-          else chapterSel.topics = chapterSel.topics.filter((t) => t !== topic);
+          if (ix === -1) {
+            chapterSel.topics = [...chapterSel.topics, topic];
+            chapterSel.topicIds = [...(chapterSel.topicIds || []), topicId];
+          } else {
+            chapterSel.topics = chapterSel.topics.filter((t) => t !== topic);
+            chapterSel.topicIds = (chapterSel.topicIds || []).filter((id) => id !== topicId);
+          }
           // remove chapter if no topics left
           if (chapterSel.topics.length === 0) {
             return { ...e, syllabus: sel.filter((c) => c.chapter !== chapter) };
@@ -174,13 +180,15 @@ export default function ExamCorner() {
     );
   };
 
-  const toggleChapterSelect = (entryId: string, chapter: string, allTopics: string[]) => {
+  const toggleChapterSelect = (entryId: string, chapter: string, allTopics: Array<{id: string, title: string}>) => {
     // if all topics are selected -> unselect chapter, otherwise select all topics
     setEntries((prev) =>
       prev.map((e) => {
         if (e.id !== entryId) return e;
         const sel = [...e.syllabus];
         const chapterSel = sel.find((c) => c.chapter === chapter);
+        const allTopicTitles = allTopics.map(t => t.title);
+        const allTopicIds = allTopics.map(t => t.id);
         if (chapterSel) {
           const selectedCount = chapterSel.topics.length;
           if (selectedCount === allTopics.length) {
@@ -188,11 +196,11 @@ export default function ExamCorner() {
             return { ...e, syllabus: sel.filter((c) => c.chapter !== chapter) };
           }
           // otherwise select all topics
-          const updated = sel.map((c) => (c.chapter === chapter ? { chapter, topics: [...allTopics] } : c));
+          const updated = sel.map((c) => (c.chapter === chapter ? { chapter, topics: [...allTopicTitles], topicIds: [...allTopicIds] } : c));
           return { ...e, syllabus: updated };
         }
         // not present -> add with all topics
-        sel.push({ chapter, topics: [...allTopics] });
+        sel.push({ chapter, topics: [...allTopicTitles], topicIds: [...allTopicIds] });
         return { ...e, syllabus: sel };
       })
     );
@@ -354,7 +362,7 @@ export default function ExamCorner() {
                                             ref={(el) => {
                                               if (el) el.indeterminate = indeterminate;
                                             }}
-                                            onChange={() => toggleChapterSelect(entry.id, chapterTitle, topics.map((t) => t.title))}
+                                            onChange={() => toggleChapterSelect(entry.id, chapterTitle, topics)}
                                           />
                                           <strong className="text-sm">{chapterTitle}</strong>
                                         </>
@@ -372,7 +380,7 @@ export default function ExamCorner() {
                                               .find((c) => c.chapter === chapterTitle)
                                               ?.topics.includes(t.title)
                                           }
-                                          onChange={() => toggleChapterTopic(entry.id, chapterTitle, t.title)}
+                                          onChange={() => toggleChapterTopic(entry.id, chapterTitle, t.title, t.id)}
                                         />
                                         <span>{t.title}</span>
                                       </label>

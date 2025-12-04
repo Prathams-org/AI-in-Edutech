@@ -141,6 +141,37 @@ export default function LearnModePage() {
       })
     }).catch(error => console.error("Error updating progress:", error));
     
+    // If this is a task chat and it's completed, mark the task as complete
+    if (progress === 100 && chatData.mode === "task" && chatData.taskId) {
+      getDoc(studentRef).then(async (studentDoc) => {
+        if (studentDoc.exists()) {
+          const todayTasks = studentDoc.data().todayTasks || [];
+          const updatedTasks = todayTasks.map((task: any) => {
+            if (task.id === chatData.taskId) {
+              return { ...task, completed: true };
+            }
+            return task;
+          });
+          
+          // Track covered topics
+          const coveredTopics = studentDoc.data().coveredTopics || [];
+          const newCoveredTopics = chatData.topics || [];
+          const mergedTopics = [...coveredTopics];
+          
+          newCoveredTopics.forEach((topic: string) => {
+            if (!mergedTopics.includes(topic)) {
+              mergedTopics.push(topic);
+            }
+          });
+          
+          await updateDoc(studentRef, { 
+            todayTasks: updatedTasks,
+            coveredTopics: mergedTopics
+          }).catch(error => console.error("Error updating task completion:", error));
+        }
+      }).catch(error => console.error("Error fetching student doc:", error));
+    }
+    
     // Update student's chats array
     getDoc(studentRef).then(studentDoc => {
       if (studentDoc.exists()) {
