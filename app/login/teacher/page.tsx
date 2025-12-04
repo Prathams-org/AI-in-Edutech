@@ -1,208 +1,171 @@
-"use client"
+"use client";
 
-
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import styles from "./styles.module.css";
+import { useRouter } from "next/navigation";
+import { loginTeacher } from "@/lib/auth";
 
 export default function TeacherLoginPage() {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
 
-  const [form, setForm] = useState({ name: "", className: "", div: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [message, setMessage] = useState("");
-  const [success, setSuccess] = useState(false);
-  const [btnStyle, setBtnStyle] = useState<React.CSSProperties | undefined>(undefined);
-  const [btnColorIndex, setBtnColorIndex] = useState(0);
-  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // For register button color cycling
-  const [registerBtnColorIndex, setRegisterBtnColorIndex] = useState(0);
-  const [registerBtnStyle, setRegisterBtnStyle] = useState<React.CSSProperties | undefined>(undefined);
-
-  const gradients = [
-    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-    "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-    "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-    "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-    "linear-gradient(135deg, #30cfd0 0%, #330867 100%)",
-    "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
-    "linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%)",
-  ];
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm((s) => ({ ...s, [name]: value }));
-  }
-
-  function validate() {
-    const err: Record<string, string> = {};
-    if (!form.name.trim()) err.name = "Teacher name is required";
-    if (!form.className.trim()) err.className = "Class is required";
-    if (!form.div.trim()) err.div = "Division is required";
-    return err;
-  }
-
-  function handleMouseEnter() {
-    const nextIndex = (btnColorIndex + 1) % gradients.length;
-    setBtnColorIndex(nextIndex);
-    const gradient = gradients[nextIndex];
-    setBtnStyle({
-      background: gradient,
-      color: "white",
-      boxShadow: "0 15px 40px rgba(102, 126, 234, 0.4)",
-      transform: "translateY(-2px)",
-    });
-  }
-
-  function handleMouseLeave() {
-    setBtnStyle({
-      background: gradients[btnColorIndex],
-      color: "white",
-      boxShadow: "0 8px 20px rgba(102, 126, 234, 0.2)",
-    });
-  }
-
-  function handleRegisterMouseEnter() {
-    const nextIndex = (registerBtnColorIndex + 1) % gradients.length;
-    setRegisterBtnColorIndex(nextIndex);
-    setRegisterBtnStyle({
-      background: gradients[nextIndex],
-      color: "white",
-      boxShadow: "0 12px 30px rgba(67, 233, 123, 0.3)",
-      transform: "translateY(-3px)",
-      transition: "all 0.3s ease"
-    });
-  }
-
-  function handleRegisterMouseLeave() {
-    setRegisterBtnStyle({
-      background: gradients[registerBtnColorIndex],
-      color: "white",
-      boxShadow: "0 8px 20px rgba(67, 233, 123, 0.2)",
-      transform: "none",
-      transition: "all 0.3s ease"
-    });
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const v = validate();
-    setErrors(v);
-    if (Object.keys(v).length === 0) {
-      setSuccess(true);
-      setMessage(`Welcome back, ${form.name}! 🎉`);
-      setTimeout(() => {
-        setSuccess(false);
-        setMessage("");
-      }, 3000);
-    } else {
-      setSuccess(false);
-      setMessage("");
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
-  }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+    setMessage(null);
+
+    if (!formData.email || !formData.password) {
+      setMessage({ type: "error", text: "Please fill in all fields" });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const result = await loginTeacher(formData.email, formData.password);
+
+      if (result.success) {
+        setMessage({ type: "success", text: "Login successful! Redirecting..." });
+        setTimeout(() => {
+          router.push("/teacher");
+        }, 1500);
+      } else {
+        setMessage({ type: "error", text: result.error || "Login failed" });
+      }
+    } catch (error) {
+      setMessage({ type: "error", text: "An unexpected error occurred" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <main className={styles.container}>
-      <div className={styles.decorativeBlob1}></div>
-      <div className={styles.decorativeBlob2}></div>
-
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>
-          <div className={styles.iconCircle}>
-            <span className={styles.icon}>👨‍🏫</span>
+    <div className="min-h-screen bg-linear-to-br from-pink-100 via-purple-100 to-indigo-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-2xl p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-block p-4 bg-linear-to-r from-purple-500 to-pink-600 rounded-full mb-4">
+              <svg
+                className="w-12 h-12 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Teacher Login</h1>
+            <p className="text-gray-600">Welcome back! Please login to your account</p>
           </div>
-          <h1 className={styles.title}>Teacher Login</h1>
-          <p className={styles.subtitle}>Welcome back! Access your dashboard</p>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none text-gray-800"
+                placeholder="your.email@example.com"
+              />
+              {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none text-gray-800"
+                placeholder="Enter your password"
+              />
+              {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+            </div>
+
+            {/* Message */}
+            {message && (
+              <div
+                className={`p-4 rounded-lg ${
+                  message.type === "success"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
+                {message.text}
+              </div>
+            )}
+
+            {/* Login Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-linear-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-700 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            >
+              {isLoading ? "Logging in..." : "Login"}
+            </button>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Don't have an account?</span>
+              </div>
+            </div>
+
+            {/* Register Link */}
+            <Link
+              href="/login/teacher/register"
+              className="block w-full text-center py-3 border-2 border-purple-600 text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition-all duration-300"
+            >
+              Register Now
+            </Link>
+          </form>
         </div>
 
-        <form className={styles.form} onSubmit={handleSubmit} noValidate>
-          <div className={styles.formGroup}>
-            <label htmlFor="name" className={styles.label}>
-              <span className={styles.labelIcon}>👤</span> Teacher Name
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              value={form.name}
-              onChange={handleChange}
-              className={`${styles.input} ${errors.name ? styles.inputError : ""}`}
-              placeholder="e.g. Mr. Ramesh Kumar"
-            />
-            {errors.name && <span className={styles.error}>{errors.name}</span>}
-          </div>
-
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label htmlFor="className" className={styles.label}>
-                <span className={styles.labelIcon}>📚</span> Class
-              </label>
-              <input
-                id="className"
-                name="className"
-                type="text"
-                value={form.className}
-                onChange={handleChange}
-                className={`${styles.input} ${errors.className ? styles.inputError : ""}`}
-                placeholder="e.g. 10, 12, 9A"
-              />
-              {errors.className && <span className={styles.error}>{errors.className}</span>}
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="div" className={styles.label}>
-                <span className={styles.labelIcon}>🎓</span> Division
-              </label>
-              <input
-                id="div"
-                name="div"
-                type="text"
-                value={form.div}
-                onChange={handleChange}
-                className={`${styles.input} ${errors.div ? styles.inputError : ""}`}
-                placeholder="e.g. A, B, C"
-              />
-              {errors.div && <span className={styles.error}>{errors.div}</span>}
-            </div>
-          </div>
-
-          <div className={styles.buttonGroup}>
-            <button
-              ref={btnRef}
-              type="submit"
-              className={styles.loginBtn}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-              style={btnStyle}
-            >
-              <span className={styles.buttonText}>Login</span>
-              <span className={styles.buttonIcon}>→</span>
-            </button>
-          </div>
-
-          <div className={styles.divider}>
-            <span>New user?</span>
-          </div>
-
-          <Link
-            href="/login/teacher/register"
-            className={styles.registerBtn}
-            style={registerBtnStyle}
-            onMouseEnter={handleRegisterMouseEnter}
-            onMouseLeave={handleRegisterMouseLeave}
-          >
-            <span className={styles.registerIcon}>✨</span>
-            Create Account
-          </Link>
-
-          {message && (
-            <div className={`${styles.message} ${success ? styles.messageSuccess : styles.messageError}`}>
-              {message}
-            </div>
-          )}
-        </form>
+        {/* Student Login Link */}
+        <div className="mt-6 text-center">
+          <p className="text-gray-700">
+            Are you a student?{" "}
+            <Link href="/login/student" className="text-purple-600 hover:text-purple-700 font-semibold underline">
+              Login here
+            </Link>
+          </p>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }

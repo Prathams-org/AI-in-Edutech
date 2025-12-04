@@ -1,157 +1,170 @@
 "use client";
 
-
 import React, { useState } from "react";
-import styles from "./styles.module.css";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-const colorSets = [
-  ["#6366f1", "#6366f1"],
-  ["#f43f5e", "#f59e42"],
-  ["#10b981", "#34d399"],
-  ["#fbbf24", "#f59e42"],
-  ["#3b82f6", "#06b6d4"],
-  ["#ef4444", "#f43f5e"],
-  ["#a21caf", "#8b5cf6"],
-];
-
-function getRandomColorSet() {
-  return colorSets[Math.floor(Math.random() * colorSets.length)];
-}
+import { loginStudent } from "@/lib/auth";
 
 export default function StudentLoginPage() {
   const router = useRouter();
-  const [form, setForm] = useState({
-    name: "",
-    class: "",
-    div: "",
-    parentMobile: "",
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
   });
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [buttonColors, setButtonColors] = useState(colorSets[0]);
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setError("");
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
-  const handleButtonHover = () => {
-    setButtonColors(getRandomColorSet());
-  };
-
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.class || !form.div || !form.parentMobile) {
-      setError("Please fill in all fields.");
-      setSuccess("");
+    setErrors({});
+    setMessage(null);
+
+    if (!formData.email || !formData.password) {
+      setMessage({ type: "error", text: "Please fill in all fields" });
       return;
     }
-    
-    setSuccess("Login successful! Welcome, " + form.name + ".");
-    setError("");
-   
-  };
 
+    setIsLoading(true);
 
-  const handleRegister = () => {
-    router.push("/login/student/register");
+    try {
+      const result = await loginStudent(formData.email, formData.password);
+
+      if (result.success) {
+        setMessage({ type: "success", text: "Login successful! Redirecting..." });
+        setTimeout(() => {
+          router.push("/dashboard/student");
+        }, 1500);
+      } else {
+        setMessage({ type: "error", text: result.error || "Login failed" });
+      }
+    } catch (error) {
+      setMessage({ type: "error", text: "An unexpected error occurred" });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.card}>
-        <div className={styles.title}>Student Login</div>
-        <div className={styles.subtitle}>
-          Enter your credentials to access your dashboard
-        </div>
-        <form className={styles.form} onSubmit={handleLogin}>
-          <div className={styles.row}>
-            <span>
-              <label className={styles.label} htmlFor="name">Student Name</label>
-              <input
-                className={styles.input}
-                type="text"
-                id="name"
-                name="name"
-                placeholder="Enter your name"
-                value={form.name}
-                onChange={handleChange}
-                autoComplete="off"
-              />
-            </span>
-            <span>
-              <label className={styles.label} htmlFor="class">Class</label>
-              <input
-                className={styles.input}
-                type="text"
-                id="class"
-                name="class"
-                placeholder="e.g. 10"
-                value={form.class}
-                onChange={handleChange}
-                autoComplete="off"
-              />
-            </span>
+    <div className="min-h-screen bg-linear-to-br from-blue-100 via-indigo-100 to-purple-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-2xl p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-block p-4 bg-linear-to-r from-blue-500 to-indigo-600 rounded-full mb-4">
+              <svg
+                className="w-12 h-12 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Student Login</h1>
+            <p className="text-gray-600">Welcome back! Please login to your account</p>
           </div>
-          <div className={styles.row}>
-            <span>
-              <label className={styles.label} htmlFor="div">Division</label>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
               <input
-                className={styles.input}
-                type="text"
-                id="div"
-                name="div"
-                placeholder="e.g. A"
-                value={form.div}
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
-                autoComplete="off"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none text-gray-800"
+                placeholder="your.email@example.com"
               />
-            </span>
-            <span>
-              <label className={styles.label} htmlFor="parentMobile">Parent's Mobile</label>
+              {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
               <input
-                className={styles.input}
-                type="tel"
-                id="parentMobile"
-                name="parentMobile"
-                placeholder="Enter parent's mobile number"
-                value={form.parentMobile}
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
                 onChange={handleChange}
-                autoComplete="off"
-                pattern="[0-9]{10}"
-                maxLength={10}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none text-gray-800"
+                placeholder="Enter your password"
               />
-            </span>
-          </div>
-          {error && <div className={styles.error}>{error}</div>}
-          <div className={styles.actions}>
+              {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+            </div>
+
+            {/* Message */}
+            {message && (
+              <div
+                className={`p-4 rounded-lg ${
+                  message.type === "success"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
+                {message.text}
+              </div>
+            )}
+
+            {/* Login Button */}
             <button
               type="submit"
-              className={styles.loginBtn}
-              style={{
-                background: `linear-gradient(135deg, ${buttonColors[0]} 0%, ${buttonColors[1]} 100%)`,
-              }}
-              onMouseEnter={handleButtonHover}
+              disabled={isLoading}
+              className="w-full bg-linear-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
-              Login
+              {isLoading ? "Logging in..." : "Login"}
             </button>
-            <button
-              type="button"
-              className={styles.registerBtn}
-              style={{
-                background: `linear-gradient(135deg, ${buttonColors[0]} 0%, ${buttonColors[1]} 100%)`,
-                color: "#fff",
-                border: "none",
-              }}
-              onClick={handleRegister}
-              onMouseEnter={handleButtonHover}
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Don't have an account?</span>
+              </div>
+            </div>
+
+            {/* Register Link */}
+            <Link
+              href="/login/student/register"
+              className="block w-full text-center py-3 border-2 border-indigo-600 text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50 transition-all duration-300"
             >
-              Not Registered? Register
-            </button>
-          </div>
-          {success && <div className={styles.success}>{success}</div>}
-        </form>
+              Register Now
+            </Link>
+          </form>
+        </div>
+
+        {/* Teacher Login Link */}
+        <div className="mt-6 text-center">
+          <p className="text-gray-700">
+            Are you a teacher?{" "}
+            <Link href="/login/teacher" className="text-indigo-600 hover:text-indigo-700 font-semibold underline">
+              Login here
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
