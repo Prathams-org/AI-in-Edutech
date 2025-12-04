@@ -42,7 +42,7 @@ export default function StudentLoginPage() {
       if (result.success) {
         setMessage({ type: "success", text: "Login successful! Redirecting..." });
         setTimeout(() => {
-          router.push("/dashboard/student");
+          router.push("/student");
         }, 1500);
       } else {
         setMessage({ type: "error", text: result.error || "Login failed" });
