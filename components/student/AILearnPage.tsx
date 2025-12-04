@@ -76,7 +76,10 @@ export default function AILearnPage() {
   const stats = {
     completed: chats.filter((c) => getStatus(c.progress) === "completed").length,
     inProgress: chats.filter((c) => getStatus(c.progress) === "in_progress").length,
-    totalTime: chats.reduce((sum, c) => sum + c.timeGiven, 0),
+    totalTime: chats.reduce(
+      (sum, c) => sum + (typeof c.timeGiven === "number" && !isNaN(c.timeGiven) ? c.timeGiven : 0),
+      0
+    ),
   };
 
   const handleChatClick = (chatId: string) => {
