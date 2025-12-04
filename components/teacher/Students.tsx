@@ -598,7 +598,7 @@ export default function Students() {
 
       {/* Student Details Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
+        <DialogContent className="max-w-[90vw] lg:max-w-7xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Student Details</DialogTitle>
           </DialogHeader>
@@ -971,7 +971,7 @@ export default function Students() {
 
       {/* Chat Analytics Dialog */}
       <Dialog open={chatAnalyticsOpen} onOpenChange={setChatAnalyticsOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[80vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Session Analytics</DialogTitle>
           </DialogHeader>
