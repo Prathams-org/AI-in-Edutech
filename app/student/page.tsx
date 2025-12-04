@@ -45,6 +45,12 @@ export default function StudentDashboard() {
     }
   }, [authLoading, user]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash === "#aipage") {
+      setCurrentPage("ai-learn");
+    }
+  }, []);
+
   const loadStudentData = async () => {
     if (!user) return;
     

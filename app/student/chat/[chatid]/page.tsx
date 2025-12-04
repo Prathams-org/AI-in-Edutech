@@ -6,20 +6,15 @@ import { useAuth } from "@/lib/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { 
-  BookOpen, 
-  FileText, 
   Brain, 
+  FileText, 
+  CheckCircle2, 
   Loader2,
   ArrowLeft,
-  Sparkles,
-  CheckCircle2,
-  Clock
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-type LearningMode = "learn" | "summary" | "test";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface ChatData {
   mode: "student-content" | "teacher-content" | "user-topic";
@@ -39,23 +34,8 @@ export default function ChatPage() {
   
   const [loading, setLoading] = useState(true);
   const [chatData, setChatData] = useState<ChatData | null>(null);
-  const [currentMode, setCurrentMode] = useState<LearningMode>("learn");
-  const [isNewWorkspace, setIsNewWorkspace] = useState(false);
-  
-  // AI Generated content states
-  const [generating, setGenerating] = useState(false);
-  const [learnContent, setLearnContent] = useState<any>(null);
-  const [summaryContent, setSummaryContent] = useState<any>(null);
-  const [testContent, setTestContent] = useState<any>(null);
 
   useEffect(() => {
-    // Check if URL has #create_new_workspace flag
-    if (window.location.hash === "#create_new_workspace") {
-      setIsNewWorkspace(true);
-      // Remove hash from URL
-      window.history.replaceState(null, "", window.location.pathname);
-    }
-    
     loadChatData();
   }, [chatId, user]);
 
@@ -70,11 +50,6 @@ export default function ChatPage() {
       if (chatDoc.exists()) {
         const data = chatDoc.data() as ChatData;
         setChatData(data);
-        
-        // If it's a user-topic mode or new workspace, generate content
-        if (data.mode === "user-topic" || isNewWorkspace) {
-          generateContentForTopic(data.topicName || "");
-        }
       } else {
         alert("Chat not found");
         router.push("/student");
@@ -87,192 +62,13 @@ export default function ChatPage() {
     }
   };
 
-  const generateContentForTopic = async (topicName: string) => {
-    if (!topicName) return;
-    
-    setGenerating(true);
-    try {
-      // TODO: Call AI API to generate learning materials
-      // For now, we'll set placeholder content
-      console.log("Generating content for:", topicName);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setLearnContent({
-        topic: topicName,
-        explanation: "AI-generated explanation will appear here...",
-        examples: [],
-        flashcards: []
-      });
-      
-      setSummaryContent({
-        topic: topicName,
-        keyPoints: [],
-        definitions: []
-      });
-      
-      setTestContent({
-        topic: topicName,
-        questions: []
-      });
-      
-    } catch (error) {
-      console.error("Error generating content:", error);
-      alert("Failed to generate content");
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const renderLearnMode = () => {
-    if (!chatData) return null;
-    
-    if (chatData.mode === "user-topic" || isNewWorkspace) {
-      if (generating) {
-        return (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="w-12 h-12 animate-spin text-purple-600 mb-4" />
-            <p className="text-gray-600">AI is generating learning materials...</p>
-          </div>
-        );
-      }
-      
-      if (!learnContent) {
-        return (
-          <div className="text-center py-12">
-            <p className="text-gray-600">No content generated yet</p>
-          </div>
-        );
-      }
-      
-      return (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="w-5 h-5 text-purple-600" />
-                AI Explanation
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-700 whitespace-pre-wrap">{learnContent.explanation}</p>
-            </CardContent>
-          </Card>
-          
-          {/* Add more sections for examples, flashcards, etc. */}
-        </div>
-      );
-    }
-    
-    // For student-content or teacher-content mode
-    if (!chatData.topics || chatData.topics.length === 0) {
-      return (
-        <div className="text-center py-12">
-          <p className="text-gray-600">No topics selected</p>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="space-y-6">
-        {chatData.topics.map((topic, index) => (
-          <Card key={index}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-600" />
-                {topic.topic}
-              </CardTitle>
-              <p className="text-sm text-gray-600">
-                {topic.subject} • {topic.chapter}
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="prose max-w-none">
-                <p className="text-gray-700 whitespace-pre-wrap">{topic.content}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  };
-
-  const renderSummaryMode = () => {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-green-600" />
-              Quick Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-lg mb-2">Key Points</h3>
-                <ul className="list-disc list-inside space-y-1 text-gray-700">
-                  <li>Summary feature coming soon...</li>
-                  <li>AI will extract key concepts</li>
-                  <li>Important definitions highlighted</li>
-                </ul>
-              </div>
-              
-              <div>
-                <h3 className="font-semibold text-lg mb-2">Important Definitions</h3>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-gray-700">Definitions will appear here...</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  };
-
-  const renderTestMode = () => {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-orange-600" />
-              Practice Tests
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">📝</div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">Test Mode</h3>
-              <p className="text-gray-600 mb-6">
-                Interactive tests with adaptive difficulty
-              </p>
-              <div className="space-y-2">
-                <Button className="w-full max-w-md" variant="outline">
-                  <Clock className="w-4 h-4 mr-2" />
-                  MCQ Test
-                </Button>
-                <Button className="w-full max-w-md" variant="outline">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Short Answer Test
-                </Button>
-                <Button className="w-full max-w-md" variant="outline">
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Long Answer Test
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  const handleModeSelect = (mode: "learn" | "summary" | "test") => {
+    router.push(`/student/chat/${chatId}/${mode}`);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
       </div>
     );
@@ -280,7 +76,7 @@ export default function ChatPage() {
 
   if (!chatData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <p className="text-gray-600 mb-4">Chat not found</p>
           <Button onClick={() => router.push("/student")}>
@@ -292,15 +88,16 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100">
       {/* Header */}
-      <div className="bg-white shadow-md sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button 
                 variant="ghost" 
                 onClick={() => router.push("/student")}
+                className="hover:bg-white/60"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
@@ -321,43 +118,130 @@ export default function ChatPage() {
             {chatData.teacherSync && (
               <div className="flex items-center gap-2 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">
                 <Sparkles className="w-4 h-4" />
-                Results synced to teacher
+                Synced
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <Tabs value={currentMode} onValueChange={(v) => setCurrentMode(v as LearningMode)}>
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="learn" className="flex items-center gap-2">
-              <Brain className="w-4 h-4" />
-              Learn Mode
-            </TabsTrigger>
-            <TabsTrigger value="summary" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Summary Mode
-            </TabsTrigger>
-            <TabsTrigger value="test" className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" />
-              Test Mode
-            </TabsTrigger>
-          </TabsList>
+      {/* Mode Selection */}
+      <div className="max-w-5xl mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-800 mb-3">
+            Choose Your Learning Mode
+          </h2>
+          <p className="text-gray-600 text-lg">
+            Select how you want to learn today
+          </p>
+        </div>
 
-          <TabsContent value="learn" className="mt-0">
-            {renderLearnMode()}
-          </TabsContent>
+        <div className="grid md:grid-cols-3 gap-6">
+          {/* Learn Mode */}
+          <Card 
+            className="cursor-pointer hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 border-transparent hover:border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100"
+            onClick={() => handleModeSelect("learn")}
+          >
+            <CardContent className="p-8 text-center">
+              <div className="mb-6">
+                <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Brain className="w-10 h-10 text-white" />
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">Learn Mode</h3>
+              <p className="text-gray-600 mb-6">
+                Interactive flashcards with AI explanations and visual aids
+              </p>
+              <ul className="text-sm text-gray-700 space-y-2 text-left mb-6">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <span>Slide-based learning</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <span>Ask doubts anytime</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <span>Visual explanations</span>
+                </li>
+              </ul>
+              <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+                Start Learning
+              </Button>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="summary" className="mt-0">
-            {renderSummaryMode()}
-          </TabsContent>
+          {/* Summary Mode */}
+          <Card 
+            className="cursor-pointer hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 border-transparent hover:border-green-500 bg-gradient-to-br from-green-50 to-green-100"
+            onClick={() => handleModeSelect("summary")}
+          >
+            <CardContent className="p-8 text-center">
+              <div className="mb-6">
+                <div className="w-20 h-20 mx-auto bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <FileText className="w-10 h-10 text-white" />
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">Summary Mode</h3>
+              <p className="text-gray-600 mb-6">
+                Quick revision with key points and definitions
+              </p>
+              <ul className="text-sm text-gray-700 space-y-2 text-left mb-6">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span>Concise key points</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span>Important definitions</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span>Core concepts</span>
+                </li>
+              </ul>
+              <Button className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800">
+                View Summary
+              </Button>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="test" className="mt-0">
-            {renderTestMode()}
-          </TabsContent>
-        </Tabs>
+          {/* Test Mode */}
+          <Card 
+            className="cursor-pointer hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 border-transparent hover:border-orange-500 bg-gradient-to-br from-orange-50 to-orange-100"
+            onClick={() => handleModeSelect("test")}
+          >
+            <CardContent className="p-8 text-center">
+              <div className="mb-6">
+                <div className="w-20 h-20 mx-auto bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <CheckCircle2 className="w-10 h-10 text-white" />
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">Test Mode</h3>
+              <p className="text-gray-600 mb-6">
+                Challenge yourself with AI-generated questions
+              </p>
+              <ul className="text-sm text-gray-700 space-y-2 text-left mb-6">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                  <span>Multiple choice questions</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                  <span>Instant feedback</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                  <span>Track your progress</span>
+                </li>
+              </ul>
+              <Button className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800">
+                Take Test
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
