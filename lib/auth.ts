@@ -963,3 +963,83 @@ export async function getStudentClassrooms(
     return { success: false, error: error.message || "Failed to fetch classrooms" };
   }
 }
+
+// Get student profile by ID
+export async function getStudentProfile(
+  studentId: string
+): Promise<{ success: boolean; student?: StudentData; error?: string }> {
+  try {
+    const studentDoc = await getDoc(doc(db, "students", studentId));
+    
+    if (!studentDoc.exists()) {
+      return { success: false, error: "Student not found" };
+    }
+
+    return { success: true, student: studentDoc.data() as StudentData };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to fetch student profile" };
+  }
+}
+
+// Update student profile
+export async function updateStudentProfile(
+  studentId: string,
+  updates: Partial<Omit<StudentData, "role" | "createdAt" | "classrooms">>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Validate the updates
+    const validationErrors: ValidationError[] = [];
+
+    if (updates.name !== undefined && !updates.name.trim()) {
+      validationErrors.push({ field: "name", message: "Name is required" });
+    }
+
+    if (updates.parentEmail !== undefined) {
+      if (!updates.parentEmail.trim()) {
+        validationErrors.push({ field: "parentEmail", message: "Parent's email is required" });
+      } else if (!validateEmail(updates.parentEmail)) {
+        validationErrors.push({ field: "parentEmail", message: "Invalid parent email format" });
+      }
+    }
+
+    if (updates.std !== undefined && !updates.std.trim()) {
+      validationErrors.push({ field: "std", message: "Standard is required" });
+    }
+
+    if (updates.div !== undefined && !updates.div.trim()) {
+      validationErrors.push({ field: "div", message: "Division is required" });
+    }
+
+    if (updates.rollNo !== undefined && !updates.rollNo.trim()) {
+      validationErrors.push({ field: "rollNo", message: "Roll number is required" });
+    }
+
+    if (updates.school !== undefined && !updates.school.trim()) {
+      validationErrors.push({ field: "school", message: "School name is required" });
+    }
+
+    if (updates.parentsNo !== undefined) {
+      if (!updates.parentsNo.trim()) {
+        validationErrors.push({ field: "parentsNo", message: "Parent's number is required" });
+      } else if (!validatePhone(updates.parentsNo)) {
+        validationErrors.push({ field: "parentsNo", message: "Invalid phone number (10 digits required)" });
+      }
+    }
+
+    if (updates.gender !== undefined && !updates.gender) {
+      validationErrors.push({ field: "gender", message: "Gender is required" });
+    }
+
+    if (validationErrors.length > 0) {
+      return { success: false, error: validationErrors[0].message };
+    }
+
+    // Update student document
+    const studentRef = doc(db, "students", studentId);
+    await setDoc(studentRef, updates, { merge: true });
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to update profile" };
+  }
+}

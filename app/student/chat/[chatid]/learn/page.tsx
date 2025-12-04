@@ -122,37 +122,38 @@ export default function LearnModePage() {
   const handleProgressUpdate = async (cardIndex: number, timeSpent: number) => {
     if (!user || !chatId) return;
     
-    try {
-      const chatRef = doc(db, "students", user.uid, "chats", chatId);
-      const studentRef = doc(db, "students", user.uid);
-      
-      const progress = Math.round(((cardIndex + 1) / flashcards.length) * 100);
-      
-      await updateDoc(chatRef, {
-        progress,
-        timeGiven: increment(timeSpent),
-        lastViewedCard: cardIndex,
-        analytics: arrayUnion({
-          cardIndex,
-          timestamp: Date.now(),
-          timeSpent
-        })
-      });
-      
-      // Update student's chats array
-      const studentDoc = await getDoc(studentRef);
+    // Fire and forget - async update without blocking UI
+    const chatRef = doc(db, "students", user.uid, "chats", chatId);
+    const studentRef = doc(db, "students", user.uid);
+    
+    const progress = Math.round(((cardIndex + 1) / flashcards.length) * 100);
+    
+    // Non-blocking async update
+    updateDoc(chatRef, {
+      progress,
+      timeGiven: increment(timeSpent),
+      lastViewedCard: cardIndex,
+      lastUpdated: Date.now(),
+      analytics: arrayUnion({
+        cardIndex,
+        timestamp: Date.now(),
+        timeSpent
+      })
+    }).catch(error => console.error("Error updating progress:", error));
+    
+    // Update student's chats array
+    getDoc(studentRef).then(studentDoc => {
       if (studentDoc.exists()) {
         const chats = studentDoc.data().chats || [];
         const chatIndex = chats.findIndex((c: any) => c.chatId === chatId);
         if (chatIndex !== -1) {
           chats[chatIndex].progress = progress;
           chats[chatIndex].timeGiven = (chats[chatIndex].timeGiven || 0) + timeSpent;
-          await updateDoc(studentRef, { chats });
+          chats[chatIndex].lastViewedCard = cardIndex;
+          updateDoc(studentRef, { chats }).catch(error => console.error("Error updating student chats:", error));
         }
       }
-    } catch (error) {
-      console.error("Error updating progress:", error);
-    }
+    }).catch(error => console.error("Error fetching student doc:", error));
   };
 
   if (loading || generatingContent) {

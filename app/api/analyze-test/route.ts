@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     const { results, questions } = await request.json();
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `Analyze the student's test performance.
 

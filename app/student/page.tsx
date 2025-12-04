@@ -78,7 +78,7 @@ export default function StudentDashboard() {
   const renderPageContent = () => {
     switch (currentPage) {
       case "profile":
-        return <Profile data={studentData} />;
+        return <Profile />;
       case "classroom":
         return <Classroom />;
       case "study-hub":

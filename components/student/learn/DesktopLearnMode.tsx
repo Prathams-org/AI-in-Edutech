@@ -1,30 +1,24 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { doc, updateDoc, arrayUnion, getDoc } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { 
   ArrowLeft, 
   ArrowRight, 
   Sparkles, 
   MessageCircle, 
-  FileText, 
-  CheckCircle2,
   Loader2,
   X,
   Send,
-  BookOpen,
-  Clock,
-  Trophy,
-  AlertTriangle,
-  Lightbulb
+  BookOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 
 interface Flashcard {
@@ -39,14 +33,6 @@ interface DoubtMessage {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
-}
-
-interface Question {
-  id: number;
-  question: string;
-  options: string[];
-  correctAnswer: string;
-  difficulty: "easy" | "medium" | "hard";
 }
 
 interface Props {
@@ -67,8 +53,8 @@ export default function DesktopLearnMode({
   const router = useRouter();
   const { user } = useAuth();
   
-  // Learning State
-  const [currentCard, setCurrentCard] = useState(0);
+  // Learning State - Resume from last viewed card
+  const [currentCard, setCurrentCard] = useState(chatData.lastViewedCard || 0);
   const [cardStartTime, setCardStartTime] = useState(Date.now());
   const [direction, setDirection] = useState(0);
   
@@ -77,55 +63,31 @@ export default function DesktopLearnMode({
   const [doubtMessages, setDoubtMessages] = useState<DoubtMessage[]>([]);
   const [doubtInput, setDoubtInput] = useState("");
   const [sendingDoubt, setSendingDoubt] = useState(false);
-  
-  // Test State
-  const [isTestMode, setIsTestMode] = useState(false);
-  const [generatingTest, setGeneratingTest] = useState(false);
-  const [testQuestions, setTestQuestions] = useState<Question[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [testAnswers, setTestAnswers] = useState<any[]>([]);
-  const [questionTimer, setQuestionTimer] = useState(10);
-  const [testAnalysis, setTestAnalysis] = useState<any>(null);
-  const [analyzingTest, setAnalyzingTest] = useState(false);
-  const [showTestIntro, setShowTestIntro] = useState(false);
 
   useEffect(() => {
     setCardStartTime(Date.now());
   }, [currentCard]);
 
-  // Timer for Test
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isTestMode && !showTestIntro && !testAnalysis && testQuestions.length > 0) {
-      interval = setInterval(() => {
-        setQuestionTimer((prev) => {
-          if (prev <= 1) {
-            handleAnswerTimeout();
-            return 10;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isTestMode, showTestIntro, testAnalysis, currentQuestionIndex, testQuestions]);
-
-  const handleNext = async () => {
-    // Record time for current card (max 120s)
+  const handleNext = () => {
+    // Record time for current card (max 120s) - async, non-blocking
     const timeSpent = Math.min(Math.floor((Date.now() - cardStartTime) / 1000), 120);
-    onProgressUpdate(currentCard, timeSpent);
+    onProgressUpdate(currentCard, timeSpent); // This is now fire-and-forget
 
     if (currentCard < flashcards.length - 1) {
       setDirection(1);
       setCurrentCard(currentCard + 1);
     } else {
-      // Reached the end, suggest test
-      setShowTestIntro(true);
+      // Reached the end, redirect to test
+      router.push(`/student/chat/${chatId}/test`);
     }
   };
 
   const handlePrevious = () => {
     if (currentCard > 0) {
+      // Record time before going back - async
+      const timeSpent = Math.min(Math.floor((Date.now() - cardStartTime) / 1000), 120);
+      onProgressUpdate(currentCard, timeSpent);
+      
       setDirection(-1);
       setCurrentCard(currentCard - 1);
     }
@@ -186,275 +148,16 @@ export default function DesktopLearnMode({
     }
   };
 
-  const startTest = async () => {
-    setGeneratingTest(true);
-    try {
-      // Prepare context for test generation
-      const contentContext = flashcards.map(f => 
-        `Title: ${f.title}\nContent: ${f.content}\nKey Points: ${f.keyPoints.join(", ")}`
-      ).join("\n\n");
-
-      const response = await fetch("/api/generate-test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contentContext })
-      });
-
-      if (!response.ok) throw new Error("Failed to generate test");
-
-      const data = await response.json();
-      setTestQuestions(data.questions || data.testData.questions);
-      setIsTestMode(true);
-      setShowTestIntro(false);
-      setQuestionTimer(10);
-    } catch (error) {
-      console.error("Error starting test:", error);
-      alert("Failed to start test. Please try again.");
-    } finally {
-      setGeneratingTest(false);
-    }
-  };
-
-  const handleAnswerTimeout = () => {
-    handleAnswer(null); // Null means unanswered/timeout
-  };
-
-  const handleAnswer = (selectedOption: string | null) => {
-    const currentQ = testQuestions[currentQuestionIndex];
-    const isCorrect = selectedOption === currentQ.correctAnswer;
-    const timeTaken = 10 - questionTimer;
-
-    const answerData = {
-      questionId: currentQ.id,
-      question: currentQ.question,
-      selectedOption,
-      correctAnswer: currentQ.correctAnswer,
-      isCorrect,
-      timeTaken,
-      difficulty: currentQ.difficulty
-    };
-
-    setTestAnswers(prev => [...prev, answerData]);
-
-    if (currentQuestionIndex < testQuestions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-      setQuestionTimer(10);
-    } else {
-      submitTest([...testAnswers, answerData]);
-    }
-  };
-
-  const submitTest = async (finalAnswers: any[]) => {
-    setAnalyzingTest(true);
-    try {
-      const response = await fetch("/api/analyze-test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          results: finalAnswers,
-          questions: testQuestions
-        })
-      });
-
-      if (!response.ok) throw new Error("Failed to analyze test");
-
-      const analysis = await response.json();
-      setTestAnalysis(analysis);
-
-      // Save results
-      if (user) {
-        const chatRef = doc(db, "students", user.uid, "chats", chatId);
-        await updateDoc(chatRef, {
-          testResults: {
-            answers: finalAnswers,
-            analysis,
-            timestamp: Date.now()
-          }
-        });
-
-        // If linked to teacher, save to classroom (logic would go here or via API)
-      }
-
-    } catch (error) {
-      console.error("Error analyzing test:", error);
-      alert("Failed to analyze test results");
-    } finally {
-      setAnalyzingTest(false);
-    }
-  };
-
-  if (generatingTest) {
+  if (flashcards.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white">
-        <Loader2 className="w-12 h-12 animate-spin text-blue-600 mb-4" />
-        <h2 className="text-xl font-bold text-gray-800">Generating Your Test...</h2>
-        <p className="text-gray-500">Preparing questions based on your learning session</p>
-      </div>
-    );
-  }
-
-  if (isTestMode) {
-    if (analyzingTest) {
-      return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-white">
-          <Loader2 className="w-12 h-12 animate-spin text-purple-600 mb-4" />
-          <h2 className="text-xl font-bold text-gray-800">Analyzing Performance...</h2>
-          <p className="text-gray-500">AI is reviewing your answers and response times</p>
-        </div>
-      );
-    }
-
-    if (testAnalysis) {
-      return (
-        <div className="min-h-screen bg-gray-50 p-8">
-          <div className="max-w-4xl mx-auto">
-            <Card className="mb-8 border-t-4 border-t-purple-600">
-              <CardContent className="p-8 text-center">
-                <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">Test Complete!</h1>
-                <p className="text-gray-600 text-lg mb-6">{testAnalysis.pickupLine}</p>
-                
-                <div className="grid grid-cols-3 gap-6 mb-8">
-                  <div className="bg-blue-50 p-4 rounded-xl">
-                    <div className="text-2xl font-bold text-blue-700">{testAnalysis.score}%</div>
-                    <div className="text-sm text-blue-600">Score</div>
-                  </div>
-                  <div className="bg-green-50 p-4 rounded-xl">
-                    <div className="text-2xl font-bold text-green-700">{testAnalysis.strongPoints?.length || 0}</div>
-                    <div className="text-sm text-green-600">Strong Areas</div>
-                  </div>
-                  <div className="bg-red-50 p-4 rounded-xl">
-                    <div className="text-2xl font-bold text-red-700">{testAnalysis.weakPoints?.length || 0}</div>
-                    <div className="text-sm text-red-600">Areas to Improve</div>
-                  </div>
-                </div>
-
-                <div className="text-left space-y-6">
-                  <div>
-                    <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-green-600" /> Strong Points
-                    </h3>
-                    <ul className="list-disc list-inside text-gray-600 ml-2">
-                      {testAnalysis.strongPoints?.map((p: string, i: number) => (
-                        <li key={i}>{p}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 text-red-600" /> Weak Points
-                    </h3>
-                    <ul className="list-disc list-inside text-gray-600 ml-2">
-                      {testAnalysis.weakPoints?.map((p: string, i: number) => (
-                        <li key={i}>{p}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
-                      <Lightbulb className="w-5 h-5 text-yellow-600" /> Suggestions
-                    </h3>
-                    <ul className="list-disc list-inside text-gray-600 ml-2">
-                      {testAnalysis.suggestions?.map((p: string, i: number) => (
-                        <li key={i}>{p}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                <Button 
-                  onClick={() => router.push("/student#aipage")}
-                  className="mt-8 bg-blue-600 hover:bg-blue-700"
-                >
-                  Back to Dashboard
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full">
-          <div className="mb-6 flex justify-between items-center">
-            <div className="text-sm font-medium text-gray-500">
-              Question {currentQuestionIndex + 1} of {testQuestions.length}
-            </div>
-            <div className="flex items-center gap-2 text-orange-600 font-bold">
-              <Clock className="w-5 h-5" />
-              {questionTimer}s
-            </div>
-          </div>
-
-          <Card className="shadow-xl">
-            <CardContent className="p-8">
-              <h2 className="text-xl font-bold text-gray-800 mb-6">
-                {testQuestions[currentQuestionIndex].question}
-              </h2>
-
-              <div className="space-y-3">
-                {testQuestions[currentQuestionIndex].options.map((option, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleAnswer(option)}
-                    className="w-full text-left p-4 rounded-xl border-2 border-gray-100 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200"
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (showTestIntro) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full text-center p-8">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-8 h-8 text-blue-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Ready for a Challenge?</h2>
-          <p className="text-gray-600 mb-6">
-            You've completed the learning material. Let's test your knowledge with a quick quiz.
-          </p>
-          <div className="bg-yellow-50 p-4 rounded-lg text-left mb-6 text-sm text-yellow-800">
-            <p className="font-bold mb-1">Disclaimer:</p>
-            <ul className="list-disc list-inside space-y-1">
-              <li>10 seconds per question</li>
-              <li>Questions adapt to your level</li>
-              <li>AI analysis after completion</li>
-            </ul>
-          </div>
-          <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              className="flex-1"
-              onClick={() => setShowTestIntro(false)}
-            >
-              Review More
-            </Button>
-            <Button 
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
-              onClick={startTest}
-            >
-              Start Test
-            </Button>
-          </div>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p>No flashcards available</p>
       </div>
     );
   }
 
   const card = flashcards[currentCard];
-  const progress = ((currentCard + 1) / flashcards.length) * 100;
+  const progress = ((currentCard + 1) / flashcards.length) * 90; // Reserve last 10% for test
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -624,13 +327,16 @@ export default function DesktopLearnMode({
 
           <div className="flex-1 mx-8">
             <Progress value={progress} className="h-2" />
+            <p className="text-xs text-gray-500 text-center mt-1">
+              {currentCard === flashcards.length - 1 ? "Complete cards to take the test" : `${Math.round(progress)}% Complete`}
+            </p>
           </div>
 
           <Button
             onClick={handleNext}
             className="w-32 bg-blue-600 hover:bg-blue-700"
           >
-            {currentCard === flashcards.length - 1 ? "Finish" : "Next"} <ArrowRight className="w-4 h-4 ml-2" />
+            {currentCard === flashcards.length - 1 ? "Take Test" : "Next"} <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
       </footer>

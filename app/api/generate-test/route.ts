@@ -5,19 +5,9 @@ const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "
 
 export async function POST(request: NextRequest) {
   try {
-    const { chatData } = await request.json();
+    const { contentContext } = await request.json();
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-
-    // Prepare content context
-    let contentContext = "";
-    if (chatData.mode === "user-topic") {
-      contentContext = `Topic: ${chatData.topicName}`;
-    } else if (chatData.topics && chatData.topics.length > 0) {
-      contentContext = chatData.topics
-        .map((t: any) => `Topic: ${t.topic}\nContent: ${t.content}`)
-        .join("\n\n");
-    }
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `You are an expert educator creating assessment questions.
 
@@ -30,30 +20,29 @@ Create questions that:
 2. Cover all important concepts
 3. Have one clearly correct answer
 4. Include plausible distractors
-5. Mix of Easy, Medium, and Hard difficulty
+5. Mix of Easy (3-5), Medium (4-6), and Hard (3-5) difficulty
+6. Mark difficulty but DO NOT show it to students
 
 Return ONLY valid JSON in this format:
 {
-  "testData": {
-    "questions": [
-      {
-        "id": 1,
-        "question": "Clear question text?",
-        "options": [
-          "Option A",
-          "Option B",
-          "Option C",
-          "Option D"
-        ],
-        "correctAnswer": "Option A",
-        "explanation": "Why this is the correct answer",
-        "difficulty": "easy" | "medium" | "hard"
-      }
-    ]
-  }
+  "questions": [
+    {
+      "id": 1,
+      "question": "Clear question text?",
+      "options": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswer": "Option A",
+      "explanation": "Why this is the correct answer",
+      "difficulty": "easy"
+    }
+  ]
 }
 
-Make questions progressively challenging.`;
+Make questions progressively challenging with mixed difficulty.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -67,7 +56,7 @@ Make questions progressively challenging.`;
 
     const parsed = JSON.parse(responseText);
 
-    return NextResponse.json(parsed);
+    return NextResponse.json({ questions: parsed.questions || parsed.testData?.questions || [] });
   } catch (error) {
     console.error("Error generating test:", error);
     return NextResponse.json(
