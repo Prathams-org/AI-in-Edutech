@@ -1,14 +1,20 @@
 // lib/documentParser.ts - Client-side document parsing
 import mammoth from "mammoth";
-import * as pdfjsLib from 'pdfjs-dist';
 
-// Initialize PDF.js worker - use local installation
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.mjs',
-    import.meta.url
-  ).toString();
+// PDF.js is imported dynamically in `getPdfJs` to avoid SSR/module-evaluation
+// errors (like "DOMMatrix is not defined") when this module is loaded on the server.
+async function getPdfJs() {
+  const pdfjsLib = await import('pdfjs-dist');
+  if (typeof window !== 'undefined') {
+    (pdfjsLib as any).GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.min.mjs',
+      import.meta.url
+    ).toString();
+  }
+  return pdfjsLib as any;
 }
+
+// PDF.js worker is initialized when PDF.js is dynamically imported in `getPdfJs`.
 
 export async function parseDocument(file: File): Promise<string> {
   const fileExtension = file.name.split('.').pop()?.toLowerCase();
@@ -27,6 +33,9 @@ async function parsePDF(file: File): Promise<string> {
     const arrayBuffer = await file.arrayBuffer();
     const typedArray = new Uint8Array(arrayBuffer);
     
+    // Dynamically import PDF.js (client-only)
+    const pdfjsLib = await getPdfJs();
+
     // Load PDF document
     const loadingTask = pdfjsLib.getDocument(typedArray);
     const pdf = await loadingTask.promise;

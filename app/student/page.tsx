@@ -16,6 +16,10 @@ import {
   LogOut,
   Menu,
   X,
+  Clock,
+  Plus,
+  Utensils,
+  Coffee,
 } from "lucide-react";
 import Link from "next/link";
 import Profile from "@/components/student/Profile";
@@ -120,7 +124,7 @@ export default function StudentDashboard() {
       >
         {/* Logo/Header */}
         <div className="p-6 border-b border-blue-500">
-          <h1 className="text-2xl font-bold">EduTech AI</h1>
+          <h1 className="text-2xl font-bold">AI-in-edutech</h1>
           <p className="text-blue-200 text-sm mt-1">Student Portal</p>
         </div>
 
@@ -184,6 +188,194 @@ export default function StudentDashboard() {
   );
 }
 
+// --- Timetable Components ---
+type TimeSlot = {
+  id: string;
+  start: { hour: string; min: string; period: "AM" | "PM" };
+  end: { hour: string; min: string; period: "AM" | "PM" };
+};
+
+type CellType = "period" | "lunch" | "shortbreak";
+
+type CellData = {
+  type: CellType;
+  subject?: string;
+};
+
+type WeeklySchedule = Record<string, Record<string, CellData>>;
+
+type TimetableData = {
+  slots: TimeSlot[];
+  schedule: WeeklySchedule;
+};
+
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function TimetablePanel({ studentData }: { studentData: any }) {
+  const [classrooms, setClassrooms] = useState<Array<{ slug: string; name?: string; timetable?: TimetableData }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedClassIdx, setSelectedClassIdx] = useState(0);
+  const [selectedDayIdx, setSelectedDayIdx] = useState(0);
+
+  useEffect(() => {
+    // pick today (Mon-Sat) as default
+    const today = new Date().getDay(); // 0 Sun - 6 Sat
+    // map: Mon=1 -> idx 0
+    const map = {1:0,2:1,3:2,4:3,5:4,6:5};
+    setSelectedDayIdx(map[today as keyof typeof map] ?? 0);
+  }, []);
+
+  useEffect(() => {
+    if (!studentData) return;
+
+    const fetchClassrooms = async () => {
+      setLoading(true);
+      const raw = studentData.classrooms || [];
+      // raw can be array of strings or objects {slug,status}
+      const slugs: string[] = raw
+        .map((c: any) => (typeof c === "string" ? c : c?.slug))
+        .filter(Boolean);
+
+      const promises = slugs.map(async (slug: string) => {
+        try {
+          const cdoc = await getDoc(doc(db, "classrooms", slug));
+          if (cdoc.exists()) {
+            const data: any = cdoc.data();
+            return { slug, name: data.name || slug, timetable: data.timetable || null };
+          }
+        } catch (e) {
+          console.error("Failed to load classroom", slug, e);
+        }
+        return null;
+      });
+
+      const results = await Promise.all(promises);
+      setClassrooms(results.filter((r) => r !== null) as any);
+      setLoading(false);
+    };
+
+    fetchClassrooms();
+  }, [studentData]);
+
+  const goPrevDay = () => setSelectedDayIdx((d) => (d <= 0 ? DAYS.length - 1 : d - 1));
+  const goNextDay = () => setSelectedDayIdx((d) => (d >= DAYS.length - 1 ? 0 : d + 1));
+
+  return (
+    <div className="mt-6 bg-gray-50 border border-gray-100 rounded-xl p-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <Clock className="w-5 h-5 text-gray-600" />
+          <h4 className="font-semibold text-gray-800">Your Class Timetables</h4>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <span className="hidden sm:inline">View by class</span>
+        </div>
+      </div>
+
+      {loading && <div className="p-6 text-gray-500">Loading timetables...</div>}
+
+      {!loading && classrooms.length === 0 && (
+        <div className="p-6 text-gray-500">You have not joined any classes yet.</div>
+      )}
+
+      {!loading && classrooms.length > 0 && (
+        <div>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-gray-600">Class:</label>
+              <select
+                value={selectedClassIdx}
+                onChange={(e) => setSelectedClassIdx(parseInt(e.target.value, 10))}
+                className="px-3 py-2 border rounded-md"
+              >
+                {classrooms.map((c, i) => (
+                  <option key={c.slug} value={i}>{c.name || c.slug}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button onClick={goPrevDay} className="px-3 py-2 bg-white border rounded-md">Prev</button>
+              <div className="px-4 py-2 bg-white border rounded-md font-medium">{DAYS[selectedDayIdx]}</div>
+              <button onClick={goNextDay} className="px-3 py-2 bg-white border rounded-md">Next</button>
+            </div>
+          </div>
+
+          <TimetableGrid timetable={classrooms[selectedClassIdx]?.timetable} day={DAYS[selectedDayIdx]} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TimetableGrid({ timetable, day }: { timetable?: TimetableData | null; day: string }) {
+  if (!timetable) {
+    return <div className="p-6 text-gray-500">No timetable available for this class.</div>;
+  }
+
+  const slots = timetable.slots || [];
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[640px] bg-white rounded">
+        <thead>
+          <tr className="text-left text-sm text-gray-600 border-b">
+            <th className="p-3 w-40">Time</th>
+            <th className="p-3">{day}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {slots.map((slot) => {
+            const cell = timetable.schedule?.[day]?.[slot.id];
+            return (
+              <tr key={slot.id} className="border-b hover:bg-gray-50">
+                <td className="p-3 align-top text-sm text-gray-700 font-mono">
+                  <div>{slot.start.hour}:{slot.start.min} {slot.start.period}</div>
+                  <div className="text-xs text-gray-400">to</div>
+                  <div>{slot.end.hour}:{slot.end.min} {slot.end.period}</div>
+                </td>
+                <td className="p-3 align-top">
+                  {cell ? <CellDisplay data={cell} /> : (
+                    <div className="text-gray-400 italic">No entry</div>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function CellDisplay({ data }: { data: CellData }) {
+  if (data.type === "lunch") {
+    return (
+      <div className="flex items-center gap-3 text-orange-700">
+        <Utensils className="w-5 h-5" />
+        <span className="font-semibold">Lunch</span>
+      </div>
+    );
+  }
+  if (data.type === "shortbreak") {
+    return (
+      <div className="flex items-center gap-3 text-yellow-700">
+        <Coffee className="w-5 h-5" />
+        <span className="font-semibold">Break</span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-3">
+      <BookOpen className="w-5 h-5 text-blue-600" />
+      <div>
+        <div className="text-sm font-semibold">{data.subject || "Class"}</div>
+        <div className="text-xs text-gray-500">Period</div>
+      </div>
+    </div>
+  );
+}
+
 // Dashboard Content Component
 function DashboardContent({ studentData }: { studentData: any }) {
   return (
@@ -219,6 +411,9 @@ function DashboardContent({ studentData }: { studentData: any }) {
               </div>
             </div>
           )}
+
+          {/* Timetable Panel - shows timetables for joined classrooms */}
+          {studentData && <TimetablePanel studentData={studentData} />}
 
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🎓</div>
