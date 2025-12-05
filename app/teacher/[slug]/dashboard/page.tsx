@@ -9,6 +9,7 @@ import Timetable from "@/components/teacher/Timetable";
 import Students from "@/components/teacher/Students";
 import Content from "@/components/teacher/Content";
 import ExamCorner from "@/components/teacher/ExamCorner";
+import WalkingAnimation from "@/components/ui/WalkingAnimation";
 
 type TabType = "overview" | "timetable" | "students" | "content" | "exam";
 
@@ -68,11 +69,8 @@ export default function ClassroomDashboard() {
         <div className="pointer-events-none absolute -top-40 -left-40 h-72 w-72 rounded-full bg-cyan-400/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-40 -right-40 h-80 w-80 rounded-full bg-indigo-500/20 blur-3xl" />
 
-        <div className="backdrop-blur-2xl bg-white/5 border border-white/20 rounded-2xl px-10 py-8 flex flex-col items-center shadow-2xl shadow-cyan-500/10">
-          <div className="h-14 w-14 rounded-full border-4 border-white/20 border-t-cyan-300 animate-spin mb-4" />
-          <p className="text-slate-100/90 text-sm tracking-wide">
-            Loading classroom…
-          </p>
+        <div className="w-full h-screen flex items-center justify-center">
+           <WalkingAnimation />
         </div>
       </div>
     );

@@ -43,6 +43,7 @@ import {
   Activity,
   CheckCircle,
 } from "lucide-react";
+import GlassLoadingAnimation from "@/components/ui/GlassLoadingAnimation";
 
 interface ChatSession {
   id: string;
@@ -414,8 +415,8 @@ export default function Students() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+      <div className="flex items-center justify-center h-[60vh]">
+        <GlassLoadingAnimation />
       </div>
     );
   }
@@ -424,24 +425,24 @@ export default function Students() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Students</h2>
-          <p className="text-gray-600">Manage enrolled students and permissions</p>
+          <h2 className="text-2xl font-bold text-slate-100 mb-2">Students</h2>
+          <p className="text-slate-400">Manage enrolled students and permissions</p>
         </div>
 
         {/* Permission Toggle */}
-        <Card className="w-auto">
+        <Card className="w-auto backdrop-blur-xl bg-white/5 border-white/10">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               {requiresPermission ? (
-                <Shield className="w-5 h-5 text-purple-600" />
+                <Shield className="w-5 h-5 text-purple-400" />
               ) : (
-                <ShieldOff className="w-5 h-5 text-gray-400" />
+                <ShieldOff className="w-5 h-5 text-slate-500" />
               )}
               <div className="flex flex-col">
-                <Label htmlFor="permission-toggle" className="cursor-pointer font-medium">
+                <Label htmlFor="permission-toggle" className="cursor-pointer font-medium text-slate-200">
                   Require Permission
                 </Label>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-slate-400">
                   {requiresPermission
                     ? "Students need approval to join"
                     : "Students can join freely"}
@@ -459,61 +460,66 @@ export default function Students() {
       </div>
 
       {/* Students Tabs */}
-      <Card>
+      <Card className="backdrop-blur-xl bg-white/5 border-white/10">
         <CardContent className="pt-6">
           <Tabs defaultValue="joined" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="joined" className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Joined ({joinedStudents.length})
-              </TabsTrigger>
-              <TabsTrigger
-                value="pending"
-                className="flex items-center gap-2"
-                disabled={!requiresPermission}
-              >
-                <Clock className="w-4 h-4" />
-                Pending ({pendingStudents.length})
-              </TabsTrigger>
-            </TabsList>
+<TabsList className="grid w-full grid-cols-2 bg-slate-800/50">
+  <TabsTrigger
+    value="joined"
+    className="flex items-center gap-2 text-slate-200 data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100"
+  >
+    <Users className="w-4 h-4" />
+    Joined ({joinedStudents.length})
+  </TabsTrigger>
+
+  <TabsTrigger
+    value="pending"
+    className="flex items-center gap-2 text-slate-200 data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100"
+    disabled={!requiresPermission}
+  >
+    <Clock className="w-4 h-4" />
+    Pending ({pendingStudents.length})
+  </TabsTrigger>
+</TabsList>
+
 
             {/* Joined Students Tab */}
             <TabsContent value="joined" className="space-y-4 mt-4">
               {joinedStudents.length === 0 ? (
                 <div className="text-center py-12">
-                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">No students have joined yet</p>
+                  <Users className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                  <p className="text-slate-400">No students have joined yet</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {joinedStudents.map((student) => (
                     <div
                       key={student.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition-colors"
+                      className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 cursor-pointer transition-colors"
                       onClick={() => handleStudentClick(student)}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Users className="w-5 h-5 text-blue-600" />
+                        <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                          <Users className="w-5 h-5 text-blue-400" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-800">{student.name}</p>
-                          <p className="text-sm text-gray-600">{student.email}</p>
+                          <p className="font-medium text-slate-200">{student.name}</p>
+                          <p className="text-sm text-slate-400">{student.email}</p>
                           <div className="flex gap-2 mt-1">
                             {student.std && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-slate-500">
                                 Class: {student.std}-{student.div}
                               </span>
                             )}
                             {student.rollNo && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-slate-500">
                                 Roll: {student.rollNo}
                               </span>
                             )}
                           </div>
                         </div>
                       </div>
-                      <Badge variant="outline" className="text-green-700 border-green-300">
+                      <Badge variant="outline" className="text-emerald-400 border-emerald-400/30 bg-emerald-400/10">
                         Active
                       </Badge>
                     </div>
@@ -526,41 +532,41 @@ export default function Students() {
             <TabsContent value="pending" className="space-y-4 mt-4">
               {!requiresPermission ? (
                 <div className="text-center py-12">
-                  <ShieldOff className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">
+                  <ShieldOff className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                  <p className="text-slate-400">
                     Permission approval is disabled
                   </p>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm text-slate-500 mt-2">
                     Enable "Require Permission" to review student requests
                   </p>
                 </div>
               ) : pendingStudents.length === 0 ? (
                 <div className="text-center py-12">
-                  <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">No pending requests</p>
+                  <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                  <p className="text-slate-400">No pending requests</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {pendingStudents.map((student) => (
                     <div
                       key={student.id}
-                      className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-200"
+                      className="flex items-center justify-between p-4 bg-yellow-500/5 rounded-lg border border-yellow-500/20"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                          <Clock className="w-5 h-5 text-yellow-600" />
+                        <div className="w-10 h-10 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                          <Clock className="w-5 h-5 text-yellow-400" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-800">{student.name}</p>
-                          <p className="text-sm text-gray-600">{student.email}</p>
+                          <p className="font-medium text-slate-200">{student.name}</p>
+                          <p className="text-sm text-slate-400">{student.email}</p>
                           <div className="flex gap-2 mt-1">
                             {student.std && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-slate-500">
                                 Class: {student.std}-{student.div}
                               </span>
                             )}
                             {student.rollNo && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-slate-500">
                                 Roll: {student.rollNo}
                               </span>
                             )}
@@ -572,7 +578,7 @@ export default function Students() {
                           size="sm"
                           variant="outline"
                           onClick={() => handleAcceptStudent(student.id)}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          className="text-emerald-400 border-emerald-400/30 hover:text-emerald-300 hover:bg-emerald-400/10"
                         >
                           <Check className="w-4 h-4 mr-1" />
                           Accept
@@ -581,7 +587,7 @@ export default function Students() {
                           size="sm"
                           variant="outline"
                           onClick={() => handleRejectStudent(student.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-rose-400 border-rose-400/30 hover:text-rose-300 hover:bg-rose-400/10"
                         >
                           <X className="w-4 h-4 mr-1" />
                           Reject
@@ -598,39 +604,51 @@ export default function Students() {
 
       {/* Student Details Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-[90vw] lg:max-w-7xl max-h-[95vh] overflow-y-auto">
+        <DialogContent className="w-[90vw] max-w-7xl h-[85vh] flex flex-col bg-slate-900/95 backdrop-blur-xl border-white/10 text-slate-100">
           <DialogHeader>
-            <DialogTitle>Student Details</DialogTitle>
+            <DialogTitle className="text-slate-100">Student Details</DialogTitle>
           </DialogHeader>
 
           {selectedStudent && (
-            <Tabs defaultValue="profile" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="profile">Profile</TabsTrigger>
-                <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              </TabsList>
+            <Tabs defaultValue="profile" className="w-full flex-1 flex flex-col overflow-hidden">
+<TabsList className="grid w-full grid-cols-2 bg-slate-800/50">
+  <TabsTrigger
+    value="profile"
+    className="text-slate-200 data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100"
+  >
+    Profile
+  </TabsTrigger>
+
+  <TabsTrigger
+    value="analytics"
+    className="text-slate-200 data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100"
+  >
+    Analytics
+  </TabsTrigger>
+</TabsList>
+
 
               {/* Profile Tab */}
-              <TabsContent value="profile" className="space-y-4 mt-4">
+              <TabsContent value="profile" className="space-y-4 mt-4 flex-1 overflow-y-auto pr-2">
                 {analyticsLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+                  <div className="flex items-center justify-center h-full">
+                    <GlassLoadingAnimation />
                   </div>
                 ) : studentProfile ? (
                   <>
-                    <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
-                      <div className="w-20 h-20 bg-blue-200 rounded-full flex items-center justify-center">
-                        <Users className="w-10 h-10 text-blue-600" />
+                    <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg border border-white/10">
+                      <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center">
+                        <Users className="w-10 h-10 text-blue-400" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-2xl font-bold text-gray-800">{studentProfile.name}</h3>
-                        <p className="text-gray-600">{studentProfile.email}</p>
+                        <h3 className="text-2xl font-bold text-slate-100">{studentProfile.name}</h3>
+                        <p className="text-slate-400">{studentProfile.email}</p>
                         <div className="flex gap-3 mt-2">
-                          <Badge variant="outline" className="text-blue-700 border-blue-300">
+                          <Badge variant="outline" className="text-blue-400 border-blue-400/30 bg-blue-400/10">
                             Active Student
                           </Badge>
                           {studentProfile.gender && (
-                            <Badge variant="outline">
+                            <Badge variant="outline" className="text-slate-300 border-slate-700">
                               {studentProfile.gender}
                             </Badge>
                           )}
@@ -639,57 +657,57 @@ export default function Students() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <Card>
+                      <Card className="backdrop-blur-xl bg-white/5 border-white/10">
                         <CardHeader>
-                          <CardTitle className="text-sm">Student Information</CardTitle>
+                          <CardTitle className="text-sm text-slate-300">Student Information</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                           {studentProfile.std && (
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Class:</span>
-                              <span className="font-medium">{studentProfile.std}-{studentProfile.div}</span>
+                              <span className="text-slate-400">Class:</span>
+                              <span className="font-medium text-slate-200">{studentProfile.std}-{studentProfile.div}</span>
                             </div>
                           )}
                           {studentProfile.rollNo && (
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Roll Number:</span>
-                              <span className="font-medium">{studentProfile.rollNo}</span>
+                              <span className="text-slate-400">Roll Number:</span>
+                              <span className="font-medium text-slate-200">{studentProfile.rollNo}</span>
                             </div>
                           )}
                           {studentProfile.school && (
                             <div className="flex justify-between">
-                              <span className="text-gray-600">School:</span>
-                              <span className="font-medium text-right">{studentProfile.school}</span>
+                              <span className="text-slate-400">School:</span>
+                              <span className="font-medium text-right text-slate-200">{studentProfile.school}</span>
                             </div>
                           )}
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Status:</span>
-                            <Badge variant="outline" className="text-green-700 border-green-300">
+                            <span className="text-slate-400">Status:</span>
+                            <Badge variant="outline" className="text-emerald-400 border-emerald-400/30 bg-emerald-400/10">
                               {selectedStudent.status}
                             </Badge>
                           </div>
                         </CardContent>
                       </Card>
 
-                      <Card>
+                      <Card className="backdrop-blur-xl bg-white/5 border-white/10">
                         <CardHeader>
-                          <CardTitle className="text-sm">Contact Details</CardTitle>
+                          <CardTitle className="text-sm text-slate-300">Contact Details</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                           <div>
-                            <p className="text-xs text-gray-600 mb-1">Student Email</p>
-                            <p className="text-sm font-medium break-all">{studentProfile.email}</p>
+                            <p className="text-xs text-slate-400 mb-1">Student Email</p>
+                            <p className="text-sm font-medium break-all text-slate-200">{studentProfile.email}</p>
                           </div>
                           {studentProfile.parentEmail && (
                             <div>
-                              <p className="text-xs text-gray-600 mb-1">Parent Email</p>
-                              <p className="text-sm font-medium break-all">{studentProfile.parentEmail}</p>
+                              <p className="text-xs text-slate-400 mb-1">Parent Email</p>
+                              <p className="text-sm font-medium break-all text-slate-200">{studentProfile.parentEmail}</p>
                             </div>
                           )}
                           {studentProfile.parentsNo && (
                             <div>
-                              <p className="text-xs text-gray-600 mb-1">Parent Phone</p>
-                              <p className="text-sm font-medium">{studentProfile.parentsNo}</p>
+                              <p className="text-xs text-slate-400 mb-1">Parent Phone</p>
+                              <p className="text-sm font-medium text-slate-200">{studentProfile.parentsNo}</p>
                             </div>
                           )}
                         </CardContent>
@@ -698,14 +716,14 @@ export default function Students() {
 
                     {/* Classrooms */}
                     {studentProfile.classrooms && studentProfile.classrooms.length > 0 && (
-                      <Card>
+                      <Card className="backdrop-blur-xl bg-white/5 border-white/10">
                         <CardHeader>
-                          <CardTitle className="text-sm">Enrolled Classrooms</CardTitle>
+                          <CardTitle className="text-sm text-slate-300">Enrolled Classrooms</CardTitle>
                         </CardHeader>
                         <CardContent>
                           <div className="flex flex-wrap gap-2">
                             {studentProfile.classrooms.map((classroom: any, idx: number) => (
-                              <Badge key={idx} variant="outline">
+                              <Badge key={idx} variant="outline" className="text-slate-300 border-slate-700">
                                 {typeof classroom === "string" ? classroom : classroom.slug}
                               </Badge>
                             ))}
@@ -716,52 +734,52 @@ export default function Students() {
                   </>
                 ) : (
                   <div className="text-center py-12">
-                    <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">Unable to load student profile</p>
+                    <Users className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                    <p className="text-slate-400">Unable to load student profile</p>
                   </div>
                 )}
               </TabsContent>
 
               {/* Analytics Tab */}
-              <TabsContent value="analytics" className="space-y-4 mt-4">
+              <TabsContent value="analytics" className="space-y-4 mt-4 flex-1 overflow-y-auto pr-2">
                 {analyticsLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+                    <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
                   </div>
                 ) : chatSessions.length > 0 ? (
                   <>
                     {/* Overview Stats */}
                     <div className="grid grid-cols-3 gap-4 mb-4">
-                      <Card>
+                      <Card className="backdrop-blur-xl bg-white/5 border-white/10">
                         <CardContent className="pt-6">
                           <div className="flex flex-col items-center text-center">
-                            <Activity className="w-8 h-8 text-blue-600 mb-2" />
-                            <p className="text-2xl font-bold">{chatSessions.length}</p>
-                            <p className="text-xs text-gray-600">Learning Sessions</p>
+                            <Activity className="w-8 h-8 text-blue-400 mb-2" />
+                            <p className="text-2xl font-bold text-slate-100">{chatSessions.length}</p>
+                            <p className="text-xs text-slate-400">Learning Sessions</p>
                           </div>
                         </CardContent>
                       </Card>
 
-                      <Card>
+                      <Card className="backdrop-blur-xl bg-white/5 border-white/10">
                         <CardContent className="pt-6">
                           <div className="flex flex-col items-center text-center">
-                            <CheckCircle className="w-8 h-8 text-green-600 mb-2" />
-                            <p className="text-2xl font-bold">
+                            <CheckCircle className="w-8 h-8 text-emerald-400 mb-2" />
+                            <p className="text-2xl font-bold text-slate-100">
                               {chatSessions.filter(c => c.progress === 100 || (c.learningContent?.flashcards && c.lastViewedCard !== undefined && c.lastViewedCard >= (c.learningContent.flashcards.length - 1))).length}
                             </p>
-                            <p className="text-xs text-gray-600">Completed</p>
+                            <p className="text-xs text-slate-400">Completed</p>
                           </div>
                         </CardContent>
                       </Card>
 
-                      <Card>
+                      <Card className="backdrop-blur-xl bg-white/5 border-white/10">
                         <CardContent className="pt-6">
                           <div className="flex flex-col items-center text-center">
-                            <Target className="w-8 h-8 text-purple-600 mb-2" />
-                            <p className="text-2xl font-bold">
+                            <Target className="w-8 h-8 text-purple-400 mb-2" />
+                            <p className="text-2xl font-bold text-slate-100">
                               {chatSessions.reduce((acc, c) => acc + (c.testHistory?.length || 0), 0)}
                             </p>
-                            <p className="text-xs text-gray-600">Tests Taken</p>
+                            <p className="text-xs text-slate-400">Tests Taken</p>
                           </div>
                         </CardContent>
                       </Card>
@@ -769,12 +787,12 @@ export default function Students() {
 
                     {/* Task-Based Learning Sessions */}
                     {chatSessions.filter(c => c.mode === "task").length > 0 && (
-                      <Card className="border-purple-200 bg-gradient-to-br from-purple-50/50 to-white">
+                      <Card className="backdrop-blur-xl bg-white/5 border-white/10">
                         <CardHeader>
-                          <CardTitle className="text-sm flex items-center gap-2">
-                            <Target className="w-4 h-4 text-purple-600" />
+                          <CardTitle className="text-sm flex items-center gap-2 text-slate-200">
+                            <Target className="w-4 h-4 text-purple-400" />
                             Study Tasks
-                            <Badge variant="outline" className="ml-auto text-purple-700 border-purple-300">
+                            <Badge variant="outline" className="ml-auto text-purple-400 border-purple-400/30 bg-purple-400/10">
                               {chatSessions.filter(c => c.mode === "task").length}
                             </Badge>
                           </CardTitle>
@@ -795,58 +813,58 @@ export default function Students() {
                               return (
                                 <div
                                   key={chat.id}
-                                  className="group p-4 bg-white rounded-xl border border-purple-100 hover:border-purple-300 hover:shadow-lg cursor-pointer transition-all overflow-hidden"
+                                  className="group p-4 bg-white/5 rounded-xl border border-white/10 hover:border-purple-400/50 hover:bg-white/10 cursor-pointer transition-all overflow-hidden"
                                   onClick={() => handleChatClick(chat)}
                                 >
                                   <div className="flex items-start justify-between mb-3">
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 mb-1">
-                                        <div className="w-2 h-2 rounded-full bg-purple-500 shrink-0"></div>
-                                        <h4 className="font-semibold text-gray-800 text-sm group-hover:text-purple-700 transition-colors truncate">
+                                        <div className="w-2 h-2 rounded-full bg-purple-400 shrink-0"></div>
+                                        <h4 className="font-semibold text-slate-100 text-sm group-hover:text-purple-300 transition-colors truncate">
                                           {chat.taskId || `Task ${new Date(chat.createdAt).toLocaleDateString()}`}
                                         </h4>
                                       </div>
-                                      <p className="text-xs text-gray-500 ml-4">
+                                      <p className="text-xs text-slate-400 ml-4">
                                         {chat.subject && chat.chapter ? `${chat.subject} • ${chat.chapter}` : (chat.subject || 'Study Task')}
                                       </p>
                                     </div>
                                     {chat.progress === 100 || (totalCards > 0 && currentCard >= totalCards) ? (
-                                      <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                                      <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
                                     ) : (
-                                      <Clock className="w-5 h-5 text-orange-500 shrink-0" />
+                                      <Clock className="w-5 h-5 text-orange-400 shrink-0" />
                                     )}
                                   </div>
 
                                   {/* Progress Bar */}
                                   <div className="mb-3">
                                     <div className="flex items-center justify-between mb-1">
-                                      <span className="text-xs text-gray-600">Progress</span>
-                                      <span className="text-xs font-medium text-purple-600">
+                                      <span className="text-xs text-slate-400">Progress</span>
+                                      <span className="text-xs font-medium text-purple-400">
                                         {totalCards > 0 ? `${currentCard}/${totalCards}` : `${progressPercent}%`} ({progressPercent}%)
                                       </span>
                                     </div>
-                                    <div className="w-full bg-purple-100 rounded-full h-2">
+                                    <div className="w-full bg-purple-500/20 rounded-full h-2">
                                       <div
-                                        className="h-2 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 transition-all"
+                                        className="h-2 rounded-full bg-gradient-to-r from-purple-400 to-purple-500 transition-all"
                                         style={{ width: `${progressPercent}%` }}
                                       ></div>
                                     </div>
                                   </div>
 
                                   {/* Stats */}
-                                  <div className="flex items-center gap-4 text-xs text-gray-600">
+                                  <div className="flex items-center gap-4 text-xs text-slate-400">
                                     <span className="flex items-center gap-1">
                                       <Calendar className="w-3 h-3" />
                                       {chat.createdAt ? new Date(chat.createdAt).toLocaleDateString() : 'N/A'}
                                     </span>
                                     {chat.testHistory && chat.testHistory.length > 0 && (
-                                      <span className="flex items-center gap-1 text-purple-600 font-medium">
+                                      <span className="flex items-center gap-1 text-purple-400 font-medium">
                                         <Award className="w-3 h-3" />
                                         {chat.testHistory.length} test{chat.testHistory.length > 1 ? 's' : ''} · {avgScore}% avg
                                       </span>
                                     )}
                                     {chat.lastTestScore !== undefined && (
-                                      <span className="flex items-center gap-1 text-green-600">
+                                      <span className="flex items-center gap-1 text-emerald-400">
                                         Latest: {chat.lastTestScore}%
                                       </span>
                                     )}
@@ -861,12 +879,12 @@ export default function Students() {
 
                     {/* Teacher-Synced Content Sessions */}
                     {chatSessions.filter(c => c.teacherSync && c.mode !== "task").length > 0 && (
-                      <Card className="border-blue-200 bg-gradient-to-br from-blue-50/50 to-white">
+                      <Card className="backdrop-blur-xl bg-white/5 border-white/10">
                         <CardHeader>
-                          <CardTitle className="text-sm flex items-center gap-2">
-                            <BookOpen className="w-4 h-4 text-blue-600" />
+                          <CardTitle className="text-sm flex items-center gap-2 text-slate-200">
+                            <BookOpen className="w-4 h-4 text-blue-400" />
                             Content Learning
-                            <Badge variant="outline" className="ml-auto text-blue-700 border-blue-300">
+                            <Badge variant="outline" className="ml-auto text-blue-400 border-blue-400/30 bg-blue-400/10">
                               {chatSessions.filter(c => c.teacherSync && c.mode !== "task").length}
                             </Badge>
                           </CardTitle>
@@ -888,24 +906,24 @@ export default function Students() {
                               return (
                                 <div
                                   key={chat.id}
-                                  className="group p-4 bg-white rounded-xl border border-blue-100 hover:border-blue-300 hover:shadow-lg cursor-pointer transition-all overflow-hidden"
+                                  className="group p-4 bg-white/5 rounded-xl border border-white/10 hover:border-blue-400/50 hover:bg-white/10 cursor-pointer transition-all overflow-hidden"
                                   onClick={() => handleChatClick(chat)}
                                 >
                                   <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shrink-0">
-                                      <BookOpen className="w-5 h-5 text-white" />
+                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-400 flex items-center justify-center shrink-0">
+                                      <BookOpen className="w-5 h-5 text-slate-900" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-start justify-between mb-2">
                                         <div className="flex-1 min-w-0">
-                                          <h4 className="font-semibold text-gray-800 text-sm group-hover:text-blue-700 transition-colors truncate">
+                                          <h4 className="font-semibold text-slate-100 text-sm group-hover:text-blue-300 transition-colors truncate">
                                             {chatName}
                                           </h4>
-                                          <p className="text-xs text-gray-500 mt-0.5 truncate">{chat.chapter || 'Content Session'}</p>
+                                          <p className="text-xs text-slate-400 mt-0.5 truncate">{chat.chapter || 'Content Session'}</p>
                                         </div>
                                         <Badge 
                                           variant="outline" 
-                                          className="text-xs ml-2 shrink-0"
+                                          className="text-xs ml-2 shrink-0 text-slate-300 border-slate-700"
                                         >
                                           {chat.source || chat.mode}
                                         </Badge>
@@ -914,34 +932,34 @@ export default function Students() {
                                       {/* Progress Bar */}
                                       <div className="mb-3">
                                         <div className="flex items-center justify-between mb-1">
-                                          <span className="text-xs text-gray-600">Progress</span>
-                                          <span className="text-xs font-medium text-blue-600">
+                                          <span className="text-xs text-slate-400">Progress</span>
+                                          <span className="text-xs font-medium text-blue-400">
                                             {totalCards > 0 ? `${currentCard}/${totalCards}` : `${progressPercent}%`} ({progressPercent}%)
                                           </span>
                                         </div>
-                                        <div className="w-full bg-blue-100 rounded-full h-2">
+                                        <div className="w-full bg-blue-500/20 rounded-full h-2">
                                           <div
-                                            className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all"
+                                            className="h-2 rounded-full bg-gradient-to-r from-blue-400 to-indigo-400 transition-all"
                                             style={{ width: `${progressPercent}%` }}
                                           ></div>
                                         </div>
                                       </div>
 
                                       {/* Stats */}
-                                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                                      <div className="flex items-center gap-3 text-xs text-slate-400">
                                         {chat.testHistory && chat.testHistory.length > 0 && (
-                                          <span className="flex items-center gap-1 text-blue-600 font-medium">
+                                          <span className="flex items-center gap-1 text-blue-400 font-medium">
                                             <Award className="w-3 h-3" />
                                             {chat.testHistory.length} test{chat.testHistory.length > 1 ? 's' : ''} · {avgScore}% avg
                                           </span>
                                         )}
                                         {chat.lastTestScore !== undefined && (
-                                          <span className="flex items-center gap-1 text-green-600">
+                                          <span className="flex items-center gap-1 text-emerald-400">
                                             Latest: {chat.lastTestScore}%
                                           </span>
                                         )}
                                         {(chat.progress === 100 || (totalCards > 0 && currentCard >= totalCards)) && (
-                                          <span className="flex items-center gap-1 text-green-600">
+                                          <span className="flex items-center gap-1 text-emerald-400">
                                             <CheckCircle className="w-3 h-3" />
                                             Complete
                                           </span>
@@ -959,8 +977,8 @@ export default function Students() {
                   </>
                 ) : (
                   <div className="text-center py-12">
-                    <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No analytics data available</p>
+                    <BarChart3 className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                    <p className="text-slate-400">No analytics data available</p>
                   </div>
                 )}
               </TabsContent>

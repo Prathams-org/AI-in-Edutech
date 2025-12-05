@@ -42,7 +42,7 @@ export default function GlassLoadingAnimation() {
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
     >
-      <div className="w-48 h-48">
+      <div className="w-60 h-60">
         <RiveComponent />
       </div>
       <p className="mt-4 text-purple-600 font-medium animate-pulse">Loading content...</p>
