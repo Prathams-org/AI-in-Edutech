@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import SlimeLoadAnimation from "@/components/ui/GlassLoadingAnimation";
 import {
   Users,
   Plus,
@@ -150,14 +151,16 @@ export default function Classroom() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-slate-100 flex items-center justify-center">
+        <div className="w-64 h-64">
+          <SlimeLoadAnimation />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-slate-100 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -263,12 +266,7 @@ export default function Classroom() {
                               <span>{classroom.school}</span>
                             </div>
                           )}
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Clock className="w-4 h-4 text-orange-600" />
-                            <span>
-                              Joined: {classroom.joinedAt ? new Date(classroom.joinedAt.seconds * 1000).toLocaleDateString() : "N/A"}
-                            </span>
-                          </div>
+                          
                           <Button className="w-full mt-4" variant="outline">
                             View Materials
                           </Button>
