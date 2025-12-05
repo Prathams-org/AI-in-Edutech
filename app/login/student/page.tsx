@@ -106,8 +106,10 @@ export default function StudentAuthPage() {
       );
 
       if (result.success) {
-        setRegMessage({ type: "success", text: "Registration successful! Redirecting..." });
-        setTimeout(() => router.push("/dashboard/student"), 1500);
+
+        setTimeout(() => {
+          router.push("/student");
+        }, 1500);
       } else {
         setRegMessage({ type: "error", text: result.error || "Registration failed" });
       }
