@@ -90,24 +90,38 @@ export default function TimetableRedesign() {
     }
   };
 
-  if (loading) return <div className="p-8 text-gray-500">Loading timetable...</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center py-16">
+      <div className="backdrop-blur-2xl bg-white/5 border border-white/15 rounded-2xl px-8 py-6 flex items-center gap-3 shadow-lg shadow-slate-900/70">
+        <div className="h-8 w-8 rounded-full border-2 border-white/30 border-t-cyan-300 animate-spin" />
+        <p className="text-slate-100/90 text-sm">Loading timetable…</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
-      {/* Compact top label */}
-      <div className="text-sm text-gray-600 font-medium">Class Timetable</div>
+      {/* Heading */}
+      <div>
+        <h2 className="text-2xl sm:text-3xl font-bold text-white/95 tracking-tight">
+          Class Timetable
+        </h2>
+        <p className="text-slate-300/70 text-xs sm:text-sm mt-1">
+          Manage your class schedule and periods
+        </p>
+      </div>
 
       {/* VIEW 1: Empty State */}
       {!timetable && !isCreatorOpen && (
-        <div className="flex flex-col items-center justify-center h-[60vh] border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50">
-          <Clock className="w-16 h-16 text-gray-300 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700">No Timetable Found</h3>
-          <p className="text-gray-500 mb-6 max-w-md text-center">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] backdrop-blur-3xl bg-white/5 border border-white/15 rounded-3xl p-8 shadow-[0_22px_55px_rgba(15,23,42,0.85)]">
+          <Clock className="w-16 h-16 text-slate-300/40 mb-4" />
+          <h3 className="text-xl sm:text-2xl font-semibold text-white text-center">No Timetable Found</h3>
+          <p className="text-slate-300/80 text-sm sm:text-base text-center mb-8 max-w-md mt-2">
             You haven't set up the class timings yet. Define your periods, lunch breaks, and short breaks to get started.
           </p>
           <button
             onClick={() => setIsCreatorOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-lg font-medium"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-400 text-slate-900 font-semibold shadow-lg shadow-cyan-500/50 hover:shadow-cyan-400/70 transform hover:-translate-y-0.5 transition-all"
           >
             <Plus size={20} />
             Create Timetable
@@ -131,31 +145,31 @@ export default function TimetableRedesign() {
 
       {/* VIEW 3: The Grid */}
       {timetable && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="rounded-3xl backdrop-blur-3xl bg-white/7 border border-white/15 shadow-[0_22px_55px_rgba(15,23,42,0.85)] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px]">
               <thead>
-                <tr className="bg-gray-100 border-b border-gray-200">
-                  <th className="p-4 text-left font-semibold text-gray-600 w-32 sticky left-0 bg-gray-100 border-r">
+                <tr className="bg-white/5 border-b border-white/15">
+                  <th className="p-4 text-left font-semibold text-slate-200 w-32 sticky left-0 bg-white/5 border-r border-white/15 text-xs sm:text-sm">
                     Time
                   </th>
                   {DAYS.map((day) => (
-                    <th key={day} className="p-4 text-center font-semibold text-gray-700 min-w-[140px]">
+                    <th key={day} className="p-4 text-center font-semibold text-slate-100 min-w-[140px] text-xs sm:text-sm">
                       {day}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-white/10">
                 {(timetable?.slots || []).map((slot) => (
-                  <tr key={slot.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={slot.id} className="hover:bg-white/8 transition-colors">
                     {/* Time Column */}
-                    <td className="p-4 whitespace-nowrap text-sm font-medium text-gray-600 sticky left-0 bg-white border-r">
+                    <td className="p-4 whitespace-nowrap text-xs sm:text-sm font-medium text-slate-300 sticky left-0 bg-white/5 border-r border-white/15">
                       <div className="flex flex-col">
                         <span>
                           {slot.start.hour}:{slot.start.min} {slot.start.period}
                         </span>
-                        <span className="text-gray-400 text-xs text-center">to</span>
+                        <span className="text-slate-400/70 text-[10px] text-center">to</span>
                         <span>
                           {slot.end.hour}:{slot.end.min} {slot.end.period}
                         </span>
@@ -169,13 +183,13 @@ export default function TimetableRedesign() {
                         <td
                           key={`${day}-${slot.id}`}
                           onClick={() => setEditingCell({ day, slotId: slot.id })}
-                          className="p-2 border-l border-gray-100 cursor-pointer relative group h-24 align-top"
+                          className="p-2 border-l border-white/10 cursor-pointer relative group h-24 align-top hover:bg-white/8 transition-colors"
                         >
                           {cellData ? (
                             <CellDisplay data={cellData} />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="bg-blue-50 text-blue-600 p-2 rounded-full">
+                              <div className="bg-cyan-400/20 text-cyan-300 p-2 rounded-full border border-cyan-300/40">
                                 <Plus size={16} />
                               </div>
                             </div>
@@ -189,15 +203,15 @@ export default function TimetableRedesign() {
             </table>
           </div>
           
-          <div className="p-4 bg-gray-50 border-t flex justify-between items-center text-sm text-gray-500">
+          <div className="p-4 bg-white/5 border-t border-white/15 flex justify-between items-center text-xs sm:text-sm text-slate-400">
              <span>Click on any empty cell to assign a subject or break.</span>
              <button 
                onClick={() => {
                  if(confirm("This will clear the entire timetable structure. Are you sure?")) {
-                   setTimetable(null); // Local clear, usually you'd delete field in DB
+                   setTimetable(null);
                  }
                }}
-               className="text-red-500 hover:underline"
+               className="text-rose-400/80 hover:text-rose-300 transition"
              >
                Reset Timetable
              </button>
@@ -244,24 +258,24 @@ export default function TimetableRedesign() {
 function CellDisplay({ data }: { data: CellData }) {
   if (data.type === "lunch") {
     return (
-      <div className="w-full h-full bg-orange-50 rounded-lg flex flex-col items-center justify-center text-orange-700 border border-orange-100">
+      <div className="w-full h-full bg-orange-500/20 rounded-lg flex flex-col items-center justify-center text-orange-300 border border-orange-400/40 backdrop-blur-sm">
         <Utensils size={18} className="mb-1" />
-        <span className="text-xs font-bold uppercase">Lunch</span>
+        <span className="text-[10px] font-bold uppercase">Lunch</span>
       </div>
     );
   }
   if (data.type === "shortbreak") {
     return (
-      <div className="w-full h-full bg-yellow-50 rounded-lg flex flex-col items-center justify-center text-yellow-700 border border-yellow-100">
+      <div className="w-full h-full bg-yellow-500/20 rounded-lg flex flex-col items-center justify-center text-yellow-300 border border-yellow-400/40 backdrop-blur-sm">
         <Coffee size={18} className="mb-1" />
-        <span className="text-xs font-bold uppercase">Break</span>
+        <span className="text-[10px] font-bold uppercase">Break</span>
       </div>
     );
   }
   return (
-    <div className="w-full h-full bg-blue-50 rounded-lg p-2 border border-blue-100 flex flex-col justify-center text-center">
-      <span className="text-xs text-blue-400 font-semibold uppercase mb-1">Period</span>
-      <span className="text-sm font-bold text-gray-800 break-words leading-tight line-clamp-2">
+    <div className="w-full h-full bg-cyan-500/15 rounded-lg p-2 border border-cyan-400/40 flex flex-col justify-center text-center backdrop-blur-sm">
+      <span className="text-[10px] text-cyan-300/90 font-semibold uppercase mb-1">Period</span>
+      <span className="text-xs font-bold text-slate-100 break-words leading-tight line-clamp-2">
         {data.subject || "Subject"}
       </span>
     </div>
