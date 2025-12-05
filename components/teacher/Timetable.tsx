@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../../lib/AuthContext";
 import { usePathname } from "next/navigation";
 import { db } from "../../lib/firebase";
-import { doc, setDoc, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, updateDoc, onSnapshot } from "firebase/firestore"; // Added updateDoc
 import { Plus, Clock, Save, Edit2, Coffee, Utensils, BookOpen, Trash2 } from "lucide-react";
 
 // --- Types ---
@@ -80,13 +80,36 @@ export default function TimetableRedesign() {
   }, [slug]);
 
   // Save Function (Updates Firestore)
+  // FIX: Using updateDoc ensures that deleted keys in the object are actually removed from Firestore
   const saveTimetable = async (newData: TimetableData) => {
     if (!slug) return;
+    const ref = doc(db, "classrooms", slug);
     try {
-      await setDoc(doc(db, "classrooms", slug), { timetable: newData }, { merge: true });
-    } catch (error) {
-      console.error("Error saving timetable:", error);
-      alert("Failed to save changes.");
+      // We try to update first to replace the 'timetable' field entirely. 
+      // This ensures deletions are respected.
+      await updateDoc(ref, { timetable: newData });
+    } catch (error: any) {
+      // If the document doesn't exist yet (or other error), we fall back to setDoc
+      // This handles the initial creation case.
+      if (error.code === 'not-found' || error.message?.includes('No document to update')) {
+         await setDoc(ref, { timetable: newData }, { merge: true });
+      } else {
+         console.error("Error saving timetable:", error);
+         alert("Failed to save changes.");
+      }
+    }
+  };
+
+  // Helper to handle cell deletion centrally
+  const handleDeleteCell = (day: string, slotId: string) => {
+    if (!timetable) return;
+    
+    // Create a deep copy to ensure we don't mutate state directly
+    const newSchedule = JSON.parse(JSON.stringify(timetable.schedule || {})) as WeeklySchedule;
+    
+    if (newSchedule[day]) {
+      delete newSchedule[day][slotId]; // Delete the key
+      saveTimetable({ ...timetable, schedule: newSchedule }); // Save the updated object
     }
   };
 
@@ -188,13 +211,7 @@ export default function TimetableRedesign() {
                           {cellData ? (
                             <CellDisplay 
                               data={cellData}
-                              onDelete={() => {
-                                const newSchedule = JSON.parse(JSON.stringify(timetable.schedule || {})) as WeeklySchedule;
-                                if (newSchedule[day]) {
-                                  delete newSchedule[day][slot.id];
-                                  saveTimetable({ ...timetable, schedule: newSchedule });
-                                }
-                              }}
+                              onDelete={() => handleDeleteCell(day, slot.id)}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -218,11 +235,14 @@ export default function TimetableRedesign() {
                onClick={() => {
                  if(confirm("This will clear the entire timetable structure. Are you sure?")) {
                    setTimetable(null);
+                   // We need to delete the field from DB as well if we want to reset
+                   // But for now, setting null in state works until refresh. 
+                   // To persist reset: saveTimetable({ slots: [], schedule: {} });
                  }
                }}
                className="text-rose-400/80 hover:text-rose-300 transition"
              >
-               Reset Timetable
+               Reset View
              </button>
           </div>
         </div>
@@ -247,7 +267,7 @@ export default function TimetableRedesign() {
                 if (!newSchedule[currentDay]) newSchedule[currentDay] = {};
 
                 if (data === null) {
-                  // Delete the cell
+                  // Delete the cell from local object
                   delete newSchedule[currentDay][currentSlotId];
                 } else {
                   // Save the cell data
@@ -281,7 +301,7 @@ function CellDisplay({ data, onDelete }: { data: CellData; onDelete?: () => void
               e.stopPropagation();
               if (confirm("Delete this period?")) onDelete();
             }}
-            className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-red-500/80 hover:bg-red-600 rounded"
+            className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-red-500/80 hover:bg-red-600 rounded z-10"
             title="Delete"
           >
             <Trash2 size={12} className="text-white" />
@@ -301,7 +321,7 @@ function CellDisplay({ data, onDelete }: { data: CellData; onDelete?: () => void
               e.stopPropagation();
               if (confirm("Delete this period?")) onDelete();
             }}
-            className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-red-500/80 hover:bg-red-600 rounded"
+            className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-red-500/80 hover:bg-red-600 rounded z-10"
             title="Delete"
           >
             <Trash2 size={12} className="text-white" />
@@ -322,7 +342,7 @@ function CellDisplay({ data, onDelete }: { data: CellData; onDelete?: () => void
             e.stopPropagation();
             if (confirm("Delete this period?")) onDelete();
           }}
-          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-red-500/80 hover:bg-red-600 rounded"
+          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-red-500/80 hover:bg-red-600 rounded z-10"
           title="Delete"
         >
           <Trash2 size={12} className="text-white" />
@@ -622,7 +642,7 @@ function CellEditor({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Header */}
-        <div className="bg-linear-to-r from-blue-600 to-blue-700 p-6 text-white">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
           <h3 className="text-lg font-bold">{day}</h3>
           <p className="opacity-80 text-sm font-mono mt-1">
              {timeSlot.start.hour}:{timeSlot.start.min} {timeSlot.start.period} - {timeSlot.end.hour}:{timeSlot.end.min} {timeSlot.end.period}
@@ -630,7 +650,7 @@ function CellEditor({
         </div>
 
         <div className="p-6">
-          <label className="block text-sm font-bold text-gray-700 mb-3">What happens in this slot?</label>
+          <label className="block text-sm font-bold text-gray-700 mb-3">Manual Entry Details</label>
           
           <div className="grid grid-cols-3 gap-3 mb-6">
             <button 
@@ -661,7 +681,7 @@ function CellEditor({
               <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
               <input
                 autoFocus
-                placeholder="e.g. Mathematics, History"
+                placeholder="Enter Subject (e.g. Mathematics)"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
@@ -672,11 +692,11 @@ function CellEditor({
           <div className="flex gap-3 pt-4 border-t">
             <button 
               onClick={handleDelete} 
-              className="flex items-center justify-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 border border-red-200 rounded-lg font-medium transition"
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg font-medium transition"
               title="Delete this period"
             >
               <Trash2 size={18} />
-              <span>Delete</span>
+              <span className="hidden sm:inline">Delete</span>
             </button>
             <button onClick={onClose} className="flex-1 py-3 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">
               Cancel
@@ -685,7 +705,7 @@ function CellEditor({
               onClick={handleSave} 
               className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md transition"
             >
-              Done
+              Save Changes
             </button>
           </div>
         </div>
