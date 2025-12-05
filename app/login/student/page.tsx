@@ -57,7 +57,7 @@ export default function StudentAuthPage() {
       const result = await loginStudent(loginData.email, loginData.password);
       if (result.success) {
         setLoginMessage({ type: "success", text: "Login successful! Redirecting..." });
-        setTimeout(() => router.push("/dashboard/student"), 1500);
+        setTimeout(() => router.push("/student"), 1500);
       } else {
         setLoginMessage({ type: "error", text: result.error || "Login failed" });
       }
