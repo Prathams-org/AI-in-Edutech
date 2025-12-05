@@ -98,7 +98,11 @@ export default function StudentDashboard() {
       case "exam-corner":
         return <ExamCorner />;
       case "tasks":
-        return <Tasks />;
+        return <Tasks setActiveTab={(tabName) => {
+          // Map Exam Corner tab name to exam-corner page id
+          const pageId = tabName === "Exam Corner" ? "exam-corner" : tabName.toLowerCase().replace(/\s+/g, "-") as PageType;
+          setCurrentPage(pageId);
+        }} />;
       case "dashboard":
       default:
         return <DashboardContent studentData={studentData} />;

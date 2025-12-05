@@ -40,9 +40,11 @@ interface Task {
   chatId?: string;
 }
 
-// Ensure the props interface is correct, though it's optional here.
+// Ensure the props interface is correct
 interface TasksProps {
   tasks?: Task[]; // If tasks are passed as props, though current implementation loads from Firestore
+  // ADDED: This function allows the component to tell the parent dashboard to switch tabs
+  setActiveTab?: (tabName: string) => void; 
 }
 
 // --- Helper Functions (Memoized for Efficiency) ---
@@ -88,7 +90,7 @@ const getDifficultyIcon = (difficulty: Task["difficultyLevel"] | undefined) => {
 
 // --- Main Component ---
 
-export default function Tasks({ tasks: initialTasks }: TasksProps) {
+export default function Tasks({ tasks: initialTasks, setActiveTab }: TasksProps) {
   const { user } = useAuth(); // Assuming useAuth handles loading state or user is present for initial load
   const router = useRouter();
   const [todayTasks, setTodayTasks] = useState<Task[]>(initialTasks || []);
@@ -538,12 +540,21 @@ export default function Tasks({ tasks: initialTasks }: TasksProps) {
             <p className="text-gray-600 mb-6">
               Generate your personalized AI study tasks from Exam Corner
             </p>
+            {/* UPDATED BUTTON CODE STARTS HERE */}
             <Button
-              onClick={() => router.push("/exam-corner")} // Assuming /exam-corner route exists
+              onClick={() => {
+                // If the setActiveTab function exists, call it.
+                if (setActiveTab) {
+                  setActiveTab("Exam Corner"); // Make sure this string matches EXACTLY how you named the tab in your parent component
+                } else {
+                  console.error("setActiveTab function was not passed from parent");
+                }
+              }}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg"
             >
               Go to Exam Corner
             </Button>
+            {/* UPDATED BUTTON CODE ENDS HERE */}
           </div>
         ) : (
           <div className="space-y-4">
