@@ -337,6 +337,11 @@ export interface Classroom {
   teacherName: string;
   createdAt: any;
   slug: string;
+  students?: Array<{
+    id: string;
+    status: "joined" | "pending";
+    joinedAt?: any;
+  }>;
 }
 
 export function generateSlug(name: string): string {
