@@ -90,6 +90,9 @@ export default function TestAnalyticsDialog({ open, onOpenChange, test, classroo
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] bg-slate-900 border-white/20">
+          <DialogHeader>
+            <DialogTitle className="text-white/95">Loading Analytics...</DialogTitle>
+          </DialogHeader>
           <div className="flex items-center justify-center min-h-[400px]">
             <WalkingAnimation />
           </div>

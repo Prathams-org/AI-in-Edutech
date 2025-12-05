@@ -103,6 +103,9 @@ export default function TestResultDialog({ open, onOpenChange, test, classroomSl
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{test.title} - Loading Results</DialogTitle>
+          </DialogHeader>
           <div className="flex items-center justify-center min-h-[400px]">
             <WalkingAnimation />
           </div>
