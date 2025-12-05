@@ -186,7 +186,16 @@ export default function TimetableRedesign() {
                           className="p-2 border-l border-white/10 cursor-pointer relative group h-24 align-top hover:bg-white/8 transition-colors"
                         >
                           {cellData ? (
-                            <CellDisplay data={cellData} />
+                            <CellDisplay 
+                              data={cellData}
+                              onDelete={() => {
+                                const newSchedule = JSON.parse(JSON.stringify(timetable.schedule || {})) as WeeklySchedule;
+                                if (newSchedule[day]) {
+                                  delete newSchedule[day][slot.id];
+                                  saveTimetable({ ...timetable, schedule: newSchedule });
+                                }
+                              }}
+                            />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                               <div className="bg-cyan-400/20 text-cyan-300 p-2 rounded-full border border-cyan-300/40">
@@ -224,20 +233,25 @@ export default function TimetableRedesign() {
         // guard editing modal render to ensure slot exists
         const editingTimeSlot = editingCell && timetable ? timetable.slots.find((s) => s.id === editingCell.slotId) : undefined;
         if (editingCell && timetable && editingTimeSlot) {
+          const currentDay = editingCell.day;
+          const currentSlotId = editingCell.slotId;
+          
           return (
             <CellEditor
-              currentData={timetable.schedule?.[editingCell.day]?.[editingCell.slotId]}
-              day={editingCell.day}
+              currentData={timetable.schedule?.[currentDay]?.[currentSlotId]}
+              day={currentDay}
               timeSlot={editingTimeSlot}
               onClose={() => setEditingCell(null)}
               onSave={(data) => {
-                const newSchedule = { ...(timetable.schedule || {}) } as WeeklySchedule;
-                if (!newSchedule[editingCell.day]) newSchedule[editingCell.day] = {};
+                const newSchedule = JSON.parse(JSON.stringify(timetable.schedule || {})) as WeeklySchedule;
+                if (!newSchedule[currentDay]) newSchedule[currentDay] = {};
 
-                if (data) {
-                  newSchedule[editingCell.day][editingCell.slotId] = data;
+                if (data === null) {
+                  // Delete the cell
+                  delete newSchedule[currentDay][currentSlotId];
                 } else {
-                  delete newSchedule[editingCell.day][editingCell.slotId];
+                  // Save the cell data
+                  newSchedule[currentDay][currentSlotId] = data;
                 }
 
                 saveTimetable({ ...timetable, schedule: newSchedule });
@@ -255,29 +269,65 @@ export default function TimetableRedesign() {
 // --- Sub-Components ---
 
 // 1. Display Component for a Table Cell
-function CellDisplay({ data }: { data: CellData }) {
+function CellDisplay({ data, onDelete }: { data: CellData; onDelete?: () => void }) {
   if (data.type === "lunch") {
     return (
-      <div className="w-full h-full bg-orange-500/20 rounded-lg flex flex-col items-center justify-center text-orange-300 border border-orange-400/40 backdrop-blur-sm">
+      <div className="w-full h-full bg-orange-500/20 rounded-lg flex flex-col items-center justify-center text-orange-300 border border-orange-400/40 backdrop-blur-sm relative group">
         <Utensils size={18} className="mb-1" />
         <span className="text-[10px] font-bold uppercase">Lunch</span>
+        {onDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (confirm("Delete this period?")) onDelete();
+            }}
+            className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-red-500/80 hover:bg-red-600 rounded"
+            title="Delete"
+          >
+            <Trash2 size={12} className="text-white" />
+          </button>
+        )}
       </div>
     );
   }
   if (data.type === "shortbreak") {
     return (
-      <div className="w-full h-full bg-yellow-500/20 rounded-lg flex flex-col items-center justify-center text-yellow-300 border border-yellow-400/40 backdrop-blur-sm">
+      <div className="w-full h-full bg-yellow-500/20 rounded-lg flex flex-col items-center justify-center text-yellow-300 border border-yellow-400/40 backdrop-blur-sm relative group">
         <Coffee size={18} className="mb-1" />
         <span className="text-[10px] font-bold uppercase">Break</span>
+        {onDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (confirm("Delete this period?")) onDelete();
+            }}
+            className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-red-500/80 hover:bg-red-600 rounded"
+            title="Delete"
+          >
+            <Trash2 size={12} className="text-white" />
+          </button>
+        )}
       </div>
     );
   }
   return (
-    <div className="w-full h-full bg-cyan-500/15 rounded-lg p-2 border border-cyan-400/40 flex flex-col justify-center text-center backdrop-blur-sm">
+    <div className="w-full h-full bg-cyan-500/15 rounded-lg p-2 border border-cyan-400/40 flex flex-col justify-center text-center backdrop-blur-sm relative group">
       <span className="text-[10px] text-cyan-300/90 font-semibold uppercase mb-1">Period</span>
-      <span className="text-xs font-bold text-slate-100 break-words leading-tight line-clamp-2">
+      <span className="text-xs font-bold text-slate-100 wrap-break-word leading-tight line-clamp-2">
         {data.subject || "Subject"}
       </span>
+      {onDelete && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (confirm("Delete this period?")) onDelete();
+          }}
+          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-red-500/80 hover:bg-red-600 rounded"
+          title="Delete"
+        >
+          <Trash2 size={12} className="text-white" />
+        </button>
+      )}
     </div>
   );
 }
@@ -562,11 +612,17 @@ function CellEditor({
     onSave(data);
   };
 
+  const handleDelete = () => {
+    if (confirm("Are you sure you want to delete this period? This action cannot be undone.")) {
+      onSave(null);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
+        <div className="bg-linear-to-r from-blue-600 to-blue-700 p-6 text-white">
           <h3 className="text-lg font-bold">{day}</h3>
           <p className="opacity-80 text-sm font-mono mt-1">
              {timeSlot.start.hour}:{timeSlot.start.min} {timeSlot.start.period} - {timeSlot.end.hour}:{timeSlot.end.min} {timeSlot.end.period}
@@ -613,20 +669,21 @@ function CellEditor({
             </div>
           )}
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-4 border-t">
+            <button 
+              onClick={handleDelete} 
+              className="flex items-center justify-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 border border-red-200 rounded-lg font-medium transition"
+              title="Delete this period"
+            >
+              <Trash2 size={18} />
+              <span>Delete</span>
+            </button>
             <button onClick={onClose} className="flex-1 py-3 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">
               Cancel
             </button>
             <button 
-              onClick={() => onSave(null)} 
-              className="px-4 py-3 text-red-500 hover:bg-red-50 rounded-lg font-medium transition"
-              title="Clear this cell"
-            >
-              <Trash2 size={20} />
-            </button>
-            <button 
               onClick={handleSave} 
-              className="flex-[2] py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md transition"
+              className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md transition"
             >
               Done
             </button>
