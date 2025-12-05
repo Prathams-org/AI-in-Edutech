@@ -116,7 +116,7 @@ export default function Profile() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
       </div>
     );
   }
@@ -130,14 +130,14 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 pb-10 pt-8">
+    <div className="min-h-screen w-full bg-linear-to-br from-blue-50 via-indigo-50 to-slate-100 pb-10 pt-8">
       <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
         {/* Profile Form Section */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 md:p-10">
+        <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl p-8 md:p-10 border border-blue-200/50">
           {/* Header with video */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
-              <div className="relative w-16 h-16 bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 rounded-full shadow-lg overflow-hidden">
+              <div className="relative w-16 h-16 bg-linear-to-br from-blue-100 via-indigo-100 to-blue-200 rounded-full shadow-lg overflow-hidden border-2 border-blue-300">
                 <video
                   autoPlay
                   loop
@@ -151,14 +151,14 @@ export default function Profile() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-full"></div>
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-800 mb-1">My Profile</h1>
-                <p className="text-gray-600">Manage your personal information</p>
+                <h1 className="text-3xl font-bold bg-linear-to-r from-blue-800 to-indigo-800 bg-clip-text text-transparent mb-1">My Profile</h1>
+                <p className="text-blue-700 font-semibold">Manage your personal information</p>
               </div>
             </div>
             {!isEditing ? (
               <Button
                 onClick={handleEdit}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
               >
                 <Edit2 className="w-4 h-4 mr-2" />
                 Edit Profile
@@ -168,7 +168,7 @@ export default function Profile() {
                 <Button
                   onClick={handleCancel}
                   variant="outline"
-                  className="border-gray-300"
+                  className="border-blue-300 hover:bg-blue-50"
                 >
                   <X className="w-4 h-4 mr-2" />
                   Cancel
@@ -176,7 +176,7 @@ export default function Profile() {
                 <Button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? "Saving..." : "Save"}
@@ -203,7 +203,7 @@ export default function Profile() {
             {/* Personal Information */}
             <div>
               <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                <User className="w-5 h-5 mr-2 text-indigo-600" />
+                <User className="w-5 h-5 mr-2 text-blue-700" />
                 Personal Information
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

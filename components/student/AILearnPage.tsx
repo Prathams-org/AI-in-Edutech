@@ -6,6 +6,8 @@ import { useAuth } from "@/lib/AuthContext";
 import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import SlimeLoadAnimation from "@/components/ui/GlassLoadingAnimation";
+import TorchAnimation from "@/components/ui/TorchAnimation";
 
 interface ChatMetadata {
   chatId: string;
@@ -89,27 +91,31 @@ export default function AILearnPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-slate-100 flex items-center justify-center">
+        <div className="w-64 h-64">
+          <SlimeLoadAnimation />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-slate-100 p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Brain className="w-8 h-8 text-purple-600" />
-            <h1 className="text-3xl font-bold text-gray-800">AI Learn Page</h1>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 shrink-0">
+              <TorchAnimation />
+            </div>
+            <h1 className="text-3xl font-bold bg-linear-to-r from-blue-800 to-indigo-800 bg-clip-text text-transparent">AI Learn Page</h1>
           </div>
-          <p className="text-gray-600">Personalized learning with AI-powered insights</p>
+          <p className="text-blue-700 font-semibold">Personalized learning with AI-powered insights</p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+          <div className="bg-linear-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-6 border-l-4 border-green-500">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-green-800 text-sm font-semibold">Completed</p>
@@ -120,7 +126,7 @@ export default function AILearnPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+          <div className="bg-linear-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-800 text-sm font-semibold">In Progress</p>
@@ -131,18 +137,18 @@ export default function AILearnPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+          <div className="bg-linear-to-br from-blue-50 to-indigo-100 rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-800 text-sm font-semibold">Total Time</p>
-                <p className="text-4xl font-bold text-purple-600 mt-1">{stats.totalTime}</p>
-                <p className="text-xs text-purple-600 mt-1">Minutes learned</p>
+                <p className="text-blue-800 text-sm font-semibold">Total Time</p>
+                <p className="text-4xl font-bold text-blue-600 mt-1">{stats.totalTime}</p>
+                <p className="text-xs text-blue-600 mt-1">Minutes learned</p>
               </div>
-              <Clock className="w-14 h-14 text-purple-500 opacity-30" />
+              <Clock className="w-14 h-14 text-blue-500 opacity-30" />
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
+          <div className="bg-linear-to-br from-orange-50 to-orange-100 rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-orange-800 text-sm font-semibold">Total Sessions</p>
@@ -163,7 +169,7 @@ export default function AILearnPage() {
                 onClick={() => setSelectedMode(mode)}
                 className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
                   selectedMode === mode
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                    ? "bg-linear-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
                     : "bg-white text-gray-600 hover:bg-gray-50"
                 }`}
               >
@@ -222,7 +228,7 @@ export default function AILearnPage() {
                         </div>
                         <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
+                            className="h-full bg-linear-to-r from-blue-500 to-indigo-600 transition-all"
                             style={{ width: `${chat.progress}%` }}
                           />
                         </div>
@@ -249,7 +255,7 @@ export default function AILearnPage() {
 
                   {/* Right Section - Button */}
                   <div className="flex items-center">
-                    <button className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-colors font-semibold h-fit">
+                    <button className="flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-colors font-semibold h-fit shadow-lg">
                       <Play className="w-4 h-4" />
                       {status === "completed"
                         ? "Review"

@@ -8,7 +8,7 @@ import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Clock, AlertCircle } from "lucide-react";
-import WalkingAnimation from "@/components/ui/WalkingAnimation";
+import WalkingAnimation from "@/components/ui/GlassLoadingAnimation";
 
 interface Question {
   id: number;
@@ -43,6 +43,10 @@ export default function TakeTestPage() {
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
   const [timeLeft, setTimeLeft] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
+  const [finalPercentage, setFinalPercentage] = useState(0);
+  const [finalTime, setFinalTime] = useState(0);
 
   useEffect(() => {
     loadTest();
@@ -136,12 +140,12 @@ export default function TakeTestPage() {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
     } else {
-      // Submit test
-      submitTest(newResponses);
+      // Submit test and show results
+      submitTest(newResponses, true);
     }
   };
 
-  const submitTest = async (finalResponses: any[]) => {
+  const submitTest = async (finalResponses: any[], showResultsFlag = false) => {
     if (!user || !test) return;
 
     try {
@@ -150,6 +154,7 @@ export default function TakeTestPage() {
       // Calculate score
       const score = finalResponses.filter(r => r.isCorrect).length;
       const totalTime = finalResponses.reduce((sum, r) => sum + r.timeSpent, 0);
+      const percentage = Math.round((score / test.questions.length) * 100);
 
       // Get student name
       const studentDoc = await getDoc(doc(db, "students", user.uid));
@@ -179,13 +184,20 @@ export default function TakeTestPage() {
         [`testAttempts.${classroomSlug}.${testId}`]: {
           score,
           totalQuestions: test.questions.length,
-          percentage: Math.round((score / test.questions.length) * 100),
+          percentage,
           submittedAt: serverTimestamp()
         }
       });
 
-      // Redirect to student dashboard
-      router.push("/student?tab=tests");
+      if (showResultsFlag) {
+        setFinalScore(score);
+        setFinalPercentage(percentage);
+        setFinalTime(totalTime);
+        setShowResults(true);
+      } else {
+        // Redirect to student dashboard
+        router.push("/student?tab=tests");
+      }
     } catch (error) {
       console.error("Error submitting test:", error);
       alert("Failed to submit test. Please try again.");
@@ -208,6 +220,28 @@ export default function TakeTestPage() {
         <div className="text-center">
           <WalkingAnimation />
           <p className="mt-4 text-lg text-gray-700">Submitting your test...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showResults) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Test Completed!</h2>
+          <div className="mb-6">
+            <div className="text-5xl font-extrabold text-blue-600 mb-2">{finalScore} / {test?.questions.length}</div>
+            <div className="text-lg text-gray-700 mb-2">Score</div>
+            <div className="text-3xl font-bold text-cyan-500 mb-2">{finalPercentage}%</div>
+            <div className="text-sm text-gray-500">Time Taken: {finalTime} seconds</div>
+          </div>
+          <Button
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-2"
+            onClick={() => router.push("/student")}
+          >
+            Back to Dashboard
+          </Button>
         </div>
       </div>
     );
