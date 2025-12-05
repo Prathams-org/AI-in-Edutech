@@ -291,27 +291,38 @@ export default function ExamCorner() {
 
   return (
     <div className="space-y-6">
+      {/* Heading */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Exam Corner</h2>
-        <p className="text-gray-600">Create and manage exams and assessments</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-white/95 tracking-tight">
+          Exam Corner
+        </h2>
+        <p className="text-slate-300/70 text-xs sm:text-sm mt-1">
+          Create and manage exams, tests, and assessments
+        </p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md p-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">Examination Hub</h3>
-            <p className="text-gray-600">Create tests, quizzes, and track student performance</p>
-          </div>
-          <div>
+      {/* Main Card */}
+      <div className="rounded-3xl backdrop-blur-3xl bg-white/7 border border-white/15 shadow-[0_22px_55px_rgba(15,23,42,0.85)] p-6 sm:p-8 overflow-hidden">
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+            <div>
+              <h3 className="text-lg sm:text-xl font-semibold text-white mb-1">Examination Hub</h3>
+              <p className="text-slate-300/80 text-xs sm:text-sm">Create tests, quizzes, and track student performance</p>
+            </div>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button onClick={handleOpen}>Create Exam Template</Button>
+                <button
+                  onClick={handleOpen}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-400 text-slate-900 font-semibold text-sm shadow-lg shadow-cyan-500/50 hover:shadow-cyan-400/70 transform hover:-translate-y-0.5 transition-all"
+                >
+                  + Create Exam Template
+                </button>
               </DialogTrigger>
 
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-3xl backdrop-blur-3xl bg-slate-900/90 border border-white/20 text-slate-200">
                 <DialogHeader>
-                  <DialogTitle>Create Exam Template</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-white text-lg">Create Exam Template</DialogTitle>
+                  <DialogDescription className="text-slate-400">
                     Name your exam, select subjects, set date & time and choose syllabus.
                   </DialogDescription>
                 </DialogHeader>
@@ -319,35 +330,39 @@ export default function ExamCorner() {
                 <div className="space-y-4 mt-4 max-h-[70vh] overflow-auto pr-2">
                   
                   {/* Exam Name Input */}
-                  <div className="bg-gray-50 p-4 rounded-md border">
-                    <label className="block text-sm font-medium mb-1 text-gray-700">Exam Name</label>
+                  <div className="bg-white/5 p-4 rounded-2xl border border-white/15">
+                    <label className="block text-sm font-medium mb-2 text-slate-200">Exam Name</label>
                     <Input 
                       value={examTitle}
                       onChange={(e) => setExamTitle(e.target.value)}
                       placeholder="e.g. Unit Test 1, Mid-Term Exam"
-                      className="bg-white"
+                      className="bg-white/10 border border-white/20 text-slate-100 placeholder:text-slate-500 focus:ring-cyan-300/70"
                     />
                   </div>
 
                   {entries.map((entry) => (
-                    <div key={entry.id} className="border rounded-md p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <strong>Subject entry</strong>
+                    <div key={entry.id} className="border border-white/15 rounded-2xl p-4 bg-white/5">
+                      <div className="flex items-center justify-between mb-3">
+                        <strong className="text-slate-200 text-sm">Subject entry</strong>
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" onClick={() => removeEntry(entry.id)}>
+                          <button
+                            onClick={() => removeEntry(entry.id)}
+                            className="text-xs px-3 py-1.5 rounded-lg bg-rose-500/20 border border-rose-400/40 text-rose-300 hover:bg-rose-500/30 transition"
+                          >
                             Remove
-                          </Button>
+                          </button>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
                         <div>
-                          <label className="text-sm mb-1 block">Subject</label>
+                          <label className="text-xs mb-1.5 block text-slate-300">Subject</label>
                           <select
                             value={entry.subject}
                             onChange={(e) => updateEntry(entry.id, { subject: e.target.value })}
-                            className="border rounded-md px-2 py-2 w-full"
+                            className="border border-white/15 rounded-lg px-3 py-2 w-full bg-white/5 text-slate-100 text-sm focus:ring-2 focus:ring-cyan-300/70"
                           >
+
                             <option value="">Select subject</option>
                             {Object.keys(contentTree.subjects || {}).map((s) => (
                               <option key={s} value={s}>
@@ -358,32 +373,34 @@ export default function ExamCorner() {
                         </div>
 
                         <div>
-                          <label className="text-sm mb-1 block">Date</label>
+                          <label className="text-xs mb-1.5 block text-slate-300">Date</label>
                           <Input
                             type="date"
                             value={entry.date}
                             onChange={(e) => updateEntry(entry.id, { date: e.target.value })}
+                            className="bg-white/10 border border-white/20 text-slate-100 placeholder:text-slate-500 focus:ring-cyan-300/70 text-sm"
                           />
                         </div>
 
                         <div>
-                          <label className="text-sm mb-1 block">Time</label>
+                          <label className="text-xs mb-1.5 block text-slate-300">Time</label>
                           <Input
                             type="time"
                             value={entry.time}
                             onChange={(e) => updateEntry(entry.id, { time: e.target.value })}
+                            className="bg-white/10 border border-white/20 text-slate-100 placeholder:text-slate-500 focus:ring-cyan-300/70 text-sm"
                           />
                         </div>
                       </div>
 
                       {/* Syllabus selection */}
-                      <div className="mt-2">
-                        <label className="text-sm font-medium">Syllabus</label>
-                        <div className="mt-2 space-y-2">
+                      <div className="mt-3">
+                        <label className="text-xs font-medium text-slate-300 mb-2 block">Syllabus</label>
+                        <div className="space-y-2">
                           {entry.subject && contentTree.subjects[entry.subject] ? (
                             Object.entries(contentTree.subjects[entry.subject].chapters).map(
                               ([chapterTitle, topics]) => (
-                                <div key={chapterTitle} className="border rounded p-2">
+                                <div key={chapterTitle} className="border border-white/10 rounded-lg p-3 bg-white/5">
                                   <div className="flex items-center gap-2">
                                     {(() => {
                                       const chapterSel = entry.syllabus.find((c) => c.chapter === chapterTitle);
@@ -400,8 +417,9 @@ export default function ExamCorner() {
                                               if (el) el.indeterminate = indeterminate;
                                             }}
                                             onChange={() => toggleChapterSelect(entry.id, chapterTitle, topics.map((t) => t.title))}
+                                            className="w-4 h-4 rounded accent-cyan-400"
                                           />
-                                          <strong className="text-sm">{chapterTitle}</strong>
+                                          <strong className="text-sm text-slate-200">{chapterTitle}</strong>
                                         </>
                                       );
                                     })()}
@@ -409,7 +427,7 @@ export default function ExamCorner() {
 
                                   <div className="ml-6 mt-2 space-y-1">
                                     {topics.map((t) => (
-                                      <label key={t.id} className="flex items-center gap-2 text-sm">
+                                      <label key={t.id} className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
                                         <input
                                           type="checkbox"
                                           checked={
@@ -418,6 +436,7 @@ export default function ExamCorner() {
                                               ?.topics.includes(t.title)
                                           }
                                           onChange={() => toggleChapterTopic(entry.id, chapterTitle, t.title)}
+                                          className="w-3 h-3 rounded accent-cyan-400"
                                         />
                                         <span>{t.title}</span>
                                       </label>
@@ -427,52 +446,60 @@ export default function ExamCorner() {
                               )
                             )
                           ) : (
-                            <div className="text-sm text-muted-foreground">Select a subject to pick syllabus</div>
+                            <div className="text-xs text-slate-400">Select a subject to pick syllabus</div>
                           )}
                         </div>
                       </div>
                     </div>
                   ))}
 
-                  <div className="flex items-center gap-3">
-                    <Button variant="ghost" onClick={addEntry}>
-                      + Add another subject
-                    </Button>
-                  </div>
+                  <button
+                    onClick={addEntry}
+                    className="text-sm px-4 py-2 rounded-lg bg-white/5 border border-white/15 text-cyan-300 hover:bg-white/10 transition"
+                  >
+                    + Add another subject
+                  </button>
                 </div>
 
                 {validationErrors.length > 0 && (
-                  <div className="mb-2">
+                  <div className="mb-4 space-y-1">
                     {validationErrors.map((err, i) => (
-                      <div key={i} className="text-sm text-red-600">{err}</div>
+                      <div key={i} className="text-xs text-rose-400 bg-rose-500/15 border border-rose-400/30 rounded-lg p-2">{err}</div>
                     ))}
                   </div>
                 )}
 
                 <DialogFooter>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {editingTemplateId && (
-                      <Button
-                        variant="destructive"
+                      <button
                         onClick={async () => {
                           if (!editingTemplateId) return;
                           const ok = confirm("Delete this template?");
                           if (!ok) return;
                           await deleteTemplate(editingTemplateId);
                         }}
+                        className="text-xs px-4 py-2 rounded-lg bg-rose-500/20 border border-rose-400/40 text-rose-300 hover:bg-rose-500/30 transition"
                       >
                         Delete Template
-                      </Button>
+                      </button>
                     )}
                   </div>
-                  <DialogClose asChild>
-                    <Button variant="outline" onClick={() => setOpen(false)}>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setOpen(false)}
+                      className="text-xs px-4 py-2 rounded-lg bg-white/5 border border-white/15 text-slate-300 hover:bg-white/10 transition"
+                    >
                       Cancel
-                    </Button>
-                  </DialogClose>
-                  <Button onClick={saveTemplate} disabled={saving || !isFormValid}>
-                    {saving ? "Saving..." : "Save Template"}
-                  </Button>
+                    </button>
+                    <button
+                      onClick={saveTemplate}
+                      disabled={saving || !isFormValid}
+                      className="text-xs px-4 py-2 rounded-lg bg-cyan-400/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-400/30 disabled:opacity-50 transition"
+                    >
+                      {saving ? "Saving..." : "Save Template"}
+                    </button>
+                  </div>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -481,30 +508,36 @@ export default function ExamCorner() {
 
         {/* Display Exam Templates Logic */}
         {savedTemplates.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
             {savedTemplates.map((template) => (
-              <div key={template.id} className="border rounded-lg p-5 bg-gray-50 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-3">
+              <div key={template.id} className="border border-white/15 rounded-2xl p-5 bg-white/5 hover:bg-white/8 hover:border-white/25 transition-all">
+                <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h4 className="text-lg font-bold text-gray-800">{template.title}</h4>
+                    <h4 className="text-lg font-semibold text-slate-100">{template.title}</h4>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                    <span className="text-xs text-slate-400 bg-white/5 border border-white/15 px-2 py-1 rounded-lg">
                       {template.entries.length} Subjects
                     </span>
-                    <Button size="sm" variant="outline" onClick={() => handleEdit(template)}>
+                    <button
+                      onClick={() => handleEdit(template)}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-cyan-400/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-400/30 transition"
+                    >
                       Edit
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => deleteTemplate(template.id)}>
+                    </button>
+                    <button
+                      onClick={() => deleteTemplate(template.id)}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-rose-500/20 border border-rose-400/40 text-rose-300 hover:bg-rose-500/30 transition"
+                    >
                       Delete
-                    </Button>
+                    </button>
                   </div>
                 </div>
                 <div className="space-y-2">
                   {template.entries.map((entry, idx) => (
-                    <div key={idx} className="text-sm text-gray-600 flex justify-between border-b pb-1 last:border-0">
+                    <div key={idx} className="text-sm text-slate-300 flex justify-between border-b border-white/10 pb-1.5 last:border-0">
                       <span className="font-medium">{entry.subject}</span>
-                      <span>{entry.date} @ {entry.time}</span>
+                      <span className="text-slate-400">{entry.date} @ {entry.time}</span>
                     </div>
                   ))}
                 </div>
@@ -512,10 +545,10 @@ export default function ExamCorner() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
+          <div className="text-center py-16">
             <div className="text-6xl mb-4">📝</div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">Create templates and schedules</h3>
-            <p className="text-gray-600">Use the button to create an exam template for your classroom.</p>
+            <h3 className="text-xl font-semibold text-slate-200 mb-2">Create templates and schedules</h3>
+            <p className="text-slate-400 text-sm">Use the button to create an exam template for your classroom.</p>
           </div>
         )}
 
