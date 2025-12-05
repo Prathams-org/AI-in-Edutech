@@ -65,9 +65,9 @@ export default function TeacherRegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-purple-100 via-pink-50 to-orange-100 flex items-center justify-center p-4">
+    <div className="min-h-screen overflow-hidden bg-linear-to-br from-purple-100 via-pink-50 to-orange-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 h-[640px] w-full flex flex-col">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="inline-block p-4 bg-linear-to-r from-purple-500 to-pink-600 rounded-full mb-4">
@@ -90,8 +90,9 @@ export default function TeacherRegisterPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
+          <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+            <div className="flex-1 overflow-y-auto pr-2 space-y-6">
+              <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                 Full Name <span className="text-red-500">*</span>
               </label>
@@ -157,48 +158,46 @@ export default function TeacherRegisterPage() {
               )}
             </div>
 
+            </div>
+
             {/* Message */}
             {message && (
-              <div
-                className={`p-4 rounded-lg ${
-                  message.type === "success"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
-                }`}
-              >
-                {message.text}
+              <div className="mt-4">
+                <div
+                  className={`p-4 rounded-lg ${
+                    message.type === "success"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {message.text}
+                </div>
               </div>
             )}
 
             {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-linear-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-700 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
-              {isLoading ? "Registering..." : "Register"}
-            </button>
+            <div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-linear-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-700 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                >
+                  {isLoading ? "Registering..." : "Register"}
+                </button>
+              </div>
 
-            {/* Login Link */}
-            <div className="text-center">
-              <p className="text-gray-600">
-                Already have an account?{" "}
-                <Link href="/login/teacher" className="text-purple-600 hover:text-purple-700 font-semibold">
-                  Login here
-                </Link>
-              </p>
+              <div className="text-center mt-3">
+                <p className="text-gray-600">
+                  Already have an account?{" "}
+                  <button type="button" onClick={() => router.push('/login/teacher')} className="text-purple-600 hover:text-purple-700 font-semibold">
+                    Login here
+                  </button>
+                </p>
+              </div>
             </div>
           </form>
-        </div>
 
-        {/* Student Register Link */}
-        <div className="mt-6 text-center">
-          <p className="text-gray-700">
-            Are you a student?{" "}
-            <Link href="/login/student/register" className="text-purple-600 hover:text-purple-700 font-semibold underline">
-              Register here
-            </Link>
-          </p>
         </div>
       </div>
     </div>

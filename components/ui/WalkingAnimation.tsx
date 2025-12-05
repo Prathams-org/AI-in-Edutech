@@ -1,12 +1,11 @@
 "use client";
 
 import { useRive, useStateMachineInput, Layout, Fit, Alignment } from "@rive-app/react-canvas";
-import { useEffect } from "react";
 
 export default function WalkingAnimation() {
   const { rive, RiveComponent } = useRive({
     src: "/walking.riv",
-    stateMachines: "State Machine 1", // Assuming default state machine name, might need adjustment if known
+    stateMachines: "State Machine 1",
     autoplay: true,
     layout: new Layout({
       fit: Fit.Contain,
@@ -23,11 +22,13 @@ export default function WalkingAnimation() {
   };
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm" onClick={handleClick}>
-      <div className="w-64 h-64 cursor-pointer">
+    <div
+      className="w-full h-full min-h-screen bg-yellow-400 flex items-center justify-center"
+      onClick={handleClick}
+    >
+      <div className="w-full h-full cursor-pointer flex items-center justify-center">
         <RiveComponent />
       </div>
-      <p className="mt-4 text-gray-500 font-medium animate-pulse">Loading your dashboard...</p>
     </div>
   );
 }
