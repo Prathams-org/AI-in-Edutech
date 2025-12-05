@@ -725,6 +725,84 @@ function CellDisplay({ data }: { data: CellData }) {
 
 // Dashboard Content Component
 function DashboardContent({ studentData }: { studentData: any }) {
+  const { user } = useAuth();
+  const [loginStreak, setLoginStreak] = useState<number | null>(null);
+  const [uniqueLoginDays, setUniqueLoginDays] = useState<number>(0);
+  const [attemptedTestsCount, setAttemptedTestsCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const normalizeToDateKey = (d: Date) => {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+        d.getDate()
+      ).padStart(2, "0")}`;
+    };
+
+    const toDate = (val: any): Date | null => {
+      if (!val) return null;
+      // Firestore Timestamp
+      if (typeof val.toDate === "function") return val.toDate();
+      // raw seconds/nanoseconds
+      if (val.seconds) return new Date(val.seconds * 1000);
+      // ISO string or other date string
+      const parsed = new Date(val);
+      if (!isNaN(parsed.getTime())) return parsed;
+      return null;
+    };
+
+    const fetchStats = async () => {
+      try {
+        const sdoc = await getDoc(doc(db, "students", user.uid));
+        if (!sdoc.exists()) return;
+        const data: any = sdoc.data();
+
+        // LOGIN DATES: support multiple possible field names
+        const rawLogins: any[] = data.loginDates || data.loginHistory || data.logins || data.login || [];
+        const dateSet = new Set<string>();
+        rawLogins.forEach((item) => {
+          const dt = toDate(item);
+          if (dt) dateSet.add(normalizeToDateKey(dt));
+        });
+
+        const uniqueDates = Array.from(dateSet).sort((a, b) => (a < b ? 1 : -1)); // newest first
+        setUniqueLoginDays(uniqueDates.length);
+
+        // Compute consecutive streak ending at most recent login
+        let streak = 0;
+        if (uniqueDates.length > 0) {
+          const mostRecent = new Date(uniqueDates[0]);
+          let cur = new Date(mostRecent);
+          const keys = new Set(uniqueDates);
+          while (true) {
+            const key = normalizeToDateKey(cur);
+            if (keys.has(key)) {
+              streak += 1;
+              // move to previous day
+              cur.setDate(cur.getDate() - 1);
+            } else {
+              break;
+            }
+          }
+        }
+        setLoginStreak(streak || null);
+
+        // TESTS ATTEMPTED: gather unique test ids across classrooms
+        const attempts = data.testAttempts || {};
+        const testsSet = new Set<string>();
+        Object.keys(attempts).forEach((classSlug) => {
+          const classObj = attempts[classSlug] || {};
+          Object.keys(classObj).forEach((testId) => testsSet.add(testId));
+        });
+        setAttemptedTestsCount(testsSet.size);
+      } catch (e) {
+        console.error("Failed to fetch dashboard stats", e);
+      }
+    };
+
+    fetchStats();
+  }, [user]);
+
   return (
     <div className="min-h-screen p-4 md:p-8">
       {/* Animated Background Elements */}
@@ -856,9 +934,24 @@ function DashboardContent({ studentData }: { studentData: any }) {
                   <h3 className="font-bold text-xl text-indigo-900">Quick Stats</h3>
                 </div>
                 <div className="space-y-3">
-                  <StatRow icon="📚" label="Enrolled Classes" value="0" color="from-blue-600 to-indigo-600" />
-                  <StatRow icon="📝" label="Assignments" value="0" color="from-indigo-600 to-blue-700" />
-                  <StatRow icon="📊" label="Attendance" value="0%" color="from-blue-700 to-indigo-700" />
+                  <StatRow
+                    icon="📚"
+                    label="Enrolled Classes"
+                    value={`${(studentData.classrooms || []).length}`}
+                    color="from-blue-600 to-indigo-600"
+                  />
+                  <StatRow
+                    icon="🔥"
+                    label="Login Streak"
+                    value={`${loginStreak !== null ? loginStreak : uniqueLoginDays} days`}
+                    color="from-rose-500 to-pink-500"
+                  />
+                  <StatRow
+                    icon="🧪"
+                    label="Tests Attempted"
+                    value={`${attemptedTestsCount}`}
+                    color="from-blue-700 to-indigo-700"
+                  />
                 </div>
               </motion.div>
             </div>
