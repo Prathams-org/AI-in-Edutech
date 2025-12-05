@@ -3,9 +3,37 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "");
 
+interface TopicContent {
+  subject: string;
+  chapter: string;
+  topic: string;
+  content: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { contentContext } = await request.json();
+    const body = await request.json();
+    const { topics, contentContext } = body;
+
+    // Support both new format (topics array) and old format (contentContext string)
+    let contentText = "";
+    
+    if (topics && Array.isArray(topics) && topics.length > 0) {
+      // New format: structured topics
+      contentText = topics
+        .map((topic: TopicContent) => {
+          return `Subject: ${topic.subject}\nChapter: ${topic.chapter}\nTopic: ${topic.topic}\n\nContent:\n${topic.content}\n\n---\n\n`;
+        })
+        .join("");
+    } else if (contentContext) {
+      // Old format: plain text content
+      contentText = contentContext;
+    } else {
+      return NextResponse.json(
+        { error: "Either topics array or contentContext is required" },
+        { status: 400 }
+      );
+    }
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
@@ -13,7 +41,7 @@ export async function POST(request: NextRequest) {
 
 Based on this educational content, create 10-15 multiple choice questions:
 
-${contentContext}
+${contentText}
 
 Create questions that:
 1. Test understanding, not just memorization
@@ -35,13 +63,15 @@ Return ONLY valid JSON in this format:
         "Option C",
         "Option D"
       ],
-      "correctAnswer": "Option A",
+      "correctAnswer": 0,
       "explanation": "Why this is the correct answer",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "topic": "Topic name"
     }
   ]
 }
 
+The correctAnswer should be the index (0-3) of the correct option.
 Make questions progressively challenging with mixed difficulty.`;
 
     const result = await model.generateContent(prompt);
@@ -57,10 +87,10 @@ Make questions progressively challenging with mixed difficulty.`;
     const parsed = JSON.parse(responseText);
 
     return NextResponse.json({ questions: parsed.questions || parsed.testData?.questions || [] });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating test:", error);
     return NextResponse.json(
-      { error: "Failed to generate test" },
+      { error: error.message || "Failed to generate test" },
       { status: 500 }
     );
   }

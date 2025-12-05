@@ -12,10 +12,7 @@ interface OverviewProps {
 export default function Overview({ classroom }: OverviewProps) {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([
-    { label: "Total Students", value: 0, icon: null as any, color: "" },
-    { label: "Assignments", value: "0", icon: null as any, color: "" },
-    { label: "Attendance", value: "0%", icon: null as any, color: "" },
-    { label: "Exams", value: "0", icon: null as any, color: "" },
+    { label: "Total Students", value: 0, icon: null as any, color: "" }
   ]);
 
   useEffect(() => {
@@ -46,37 +43,7 @@ export default function Overview({ classroom }: OverviewProps) {
           </svg>
         ),
         color: "from-purple-500 to-indigo-500"
-      },
-      { 
-        label: "Assignments", 
-        value: "0", 
-        icon: (
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        ),
-        color: "from-pink-500 to-rose-500"
-      },
-      { 
-        label: "Attendance", 
-        value: "0%", 
-        icon: (
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-          </svg>
-        ),
-        color: "from-blue-500 to-cyan-500"
-      },
-      { 
-        label: "Exams", 
-        value: "0", 
-        icon: (
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        ),
-        color: "from-emerald-500 to-teal-500"
-      },
+      }
     ]);
   };
 
@@ -100,28 +67,7 @@ export default function Overview({ classroom }: OverviewProps) {
       </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="backdrop-blur-xl bg-white/5 rounded-2xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                {stat.icon}
-              </div>
-              <span className="text-xs font-medium text-slate-400 bg-white/5 px-2 py-1 rounded-full border border-white/5">Last 30 days</span>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-400 mb-1">{stat.label}</p>
-              <p className="text-3xl font-bold text-slate-100">{stat.value}</p>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Classroom Info */}
@@ -176,31 +122,29 @@ export default function Overview({ classroom }: OverviewProps) {
           </div>
         </motion.div>
 
-        {/* Recent Activity (Placeholder) */}
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="backdrop-blur-xl bg-white/5 rounded-3xl p-8 border border-white/10"
-        >
-          <h3 className="text-xl font-bold text-slate-100 mb-6 flex items-center gap-2">
-            <span className="text-2xl">🕒</span> Recent Activity
-          </h3>
-          
-          <div className="space-y-6">
-            <div className="flex gap-4 items-start">
-              <div className="w-2 h-2 mt-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
-              <div>
-                <p className="text-slate-300 text-sm">Classroom created</p>
-                <p className="text-slate-500 text-xs mt-1">Just now</p>
+
+      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+            className="backdrop-blur-xl bg-white/5 rounded-2xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                {stat.icon}
               </div>
+              <span className="text-xs font-medium text-slate-400 bg-white/5 px-2 py-1 rounded-full border border-white/5">Last 30 days</span>
             </div>
-            {/* Add more activity items here */}
-            <div className="text-center pt-4">
-              <p className="text-slate-500 text-sm italic">No more recent activity</p>
+            <div>
+              <p className="text-sm font-medium text-slate-400 mb-1">{stat.label}</p>
+              <p className="text-3xl font-bold text-slate-100">{stat.value}</p>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        ))}
       </div>
     </div>
   );

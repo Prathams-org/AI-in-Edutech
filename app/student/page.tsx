@@ -28,8 +28,9 @@ import StudyHub from "@/components/student/StudyHub";
 import AILearnPage from "@/components/student/AILearnPage";
 import ExamCorner from "@/components/student/ExamCorner";
 import Tasks from "@/components/student/Tasks";
+import TestsPage from "@/components/student/TestsPage";
 
-type PageType = "dashboard" | "profile" | "classroom" | "study-hub" | "ai-learn" | "exam-corner" | "tasks";
+type PageType = "dashboard" | "profile" | "classroom" | "study-hub" | "ai-learn" | "exam-corner" | "tasks" | "tests";
 
 export default function StudentDashboard() {
   const router = useRouter();
@@ -71,6 +72,7 @@ export default function StudentDashboard() {
     { name: "Classroom", id: "classroom", icon: <Users className="w-5 h-5" /> },
     { name: "Study Hub", id: "study-hub", icon: <BookOpen className="w-5 h-5" /> },
     { name: "AI Learn Page", id: "ai-learn", icon: <Brain className="w-5 h-5" /> },
+    { name: "Tests", id: "tests", icon: <FileText className="w-5 h-5" /> },
     { name: "Exam Corner", id: "exam-corner", icon: <FileText className="w-5 h-5" /> },
     { name: "Tasks", id: "tasks", icon: <CheckSquare className="w-5 h-5" /> },
   ];
@@ -85,6 +87,8 @@ export default function StudentDashboard() {
         return <StudyHub />;
       case "ai-learn":
         return <AILearnPage />;
+      case "tests":
+        return <TestsPage />;
       case "exam-corner":
         return <ExamCorner />;
       case "tasks":

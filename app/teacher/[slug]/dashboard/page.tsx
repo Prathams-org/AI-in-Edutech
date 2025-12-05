@@ -8,10 +8,11 @@ import Overview from "@/components/teacher/Overview";
 import Timetable from "@/components/teacher/Timetable";
 import Students from "@/components/teacher/Students";
 import Content from "@/components/teacher/Content";
+import Tests from "@/components/teacher/Tests";
 import ExamCorner from "@/components/teacher/ExamCorner";
-import WalkingAnimation from "@/components/ui/WalkingAnimation";
+import WalkingAnimation from "@/components/ui/GlassLoadingAnimation";
 
-type TabType = "overview" | "timetable" | "students" | "content" | "exam";
+type TabType = "overview" | "timetable" | "students" | "content" | "tests" | "exam";
 
 export default function ClassroomDashboard() {
   const router = useRouter();
@@ -28,7 +29,7 @@ export default function ClassroomDashboard() {
   // Handle tab query parameter
   useEffect(() => {
     const tabParam = searchParams.get("tab") as TabType | null;
-    if (tabParam && ["overview", "timetable", "students", "content", "exam"].includes(tabParam)) {
+    if (tabParam && ["overview", "timetable", "students", "content", "tests", "exam"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -103,6 +104,7 @@ export default function ClassroomDashboard() {
     { id: "timetable" as TabType, label: "Timetable", icon: "📅" },
     { id: "students" as TabType, label: "Students", icon: "👥" },
     { id: "content" as TabType, label: "Content", icon: "📚" },
+    { id: "tests" as TabType, label: "Tests", icon: "📋" },
     { id: "exam" as TabType, label: "Exam Corner", icon: "📝" },
   ];
 
@@ -118,6 +120,8 @@ export default function ClassroomDashboard() {
         return <Students />;
       case "content":
         return <Content />;
+      case "tests":
+        return <Tests />;
       case "exam":
         return <ExamCorner />;
       default:
