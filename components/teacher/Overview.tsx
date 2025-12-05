@@ -54,6 +54,7 @@ export default function Overview({ classroom }: OverviewProps) {
         </p>
       </div>
 
+<<<<<<< HEAD
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
         <StatCard
@@ -81,6 +82,10 @@ export default function Overview({ classroom }: OverviewProps) {
           glow="bg-green-300/90 shadow-green-500/40"
         />
       </div>
+=======
+      {/* Stats Cards */}
+
+>>>>>>> cc3e1ae4249e9998d3bbfc02f8b7f8e359fa8542
 
       {/* Classroom Info */}
       <div className="rounded-3xl backdrop-blur-3xl bg-white/7 border border-white/15 shadow-[0_22px_55px_rgba(15,23,42,0.85)] px-6 sm:px-8 py-8 sm:py-10 overflow-hidden relative group">
@@ -128,21 +133,24 @@ export default function Overview({ classroom }: OverviewProps) {
         {/* subtle hover glow */}
         <div className="pointer-events-none absolute -inset-1 rounded-[26px] bg-gradient-to-br from-cyan-400/0 via-cyan-400/0 to-indigo-500/0 opacity-0 group-hover:opacity-30 blur-2xl transition-opacity" />
       </div>
-
-      {/* Recent Activity */}
-      <div className="rounded-3xl backdrop-blur-3xl bg-white/7 border border-white/15 shadow-[0_22px_55px_rgba(15,23,42,0.85)] px-6 sm:px-8 py-8 sm:py-10 overflow-hidden relative">
-        {/* top glossy strip */}
-        <div className="pointer-events-none absolute inset-x-4 -top-1 h-9 bg-gradient-to-b from-white/35 via-white/0 to-transparent opacity-70 rounded-t-[22px]" />
-        
-        <div className="relative z-10">
-          <h3 className="text-lg sm:text-xl font-semibold text-white mb-4">
-            Recent Activity
-          </h3>
-          <p className="text-center py-8 text-slate-300/70 text-sm sm:text-base">
-            No recent activity yet
-          </p>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-purple-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Students</p>
+              <p className="text-3xl font-bold text-gray-800">0</p>
+            </div>
+            <div className="p-3 bg-purple-100 rounded-lg">
+              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+          </div>
         </div>
+
+
       </div>
+
     </div>
   );
 }

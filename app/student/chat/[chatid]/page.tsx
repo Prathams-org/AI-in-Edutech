@@ -17,13 +17,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface ChatData {
-  mode: "student-content" | "teacher-content" | "user-topic";
-  source: "student" | "teacher-import" | "manual";
+  mode: "student-content" | "teacher-content" | "user-topic" | "task";
+  source?: "student" | "teacher-import" | "manual";
   topicName?: string;
   topics?: any[];
   teacherSync?: boolean;
   teacherClassroomSlug?: string;
   createdAt: any;
+  // Task-specific fields
+  taskId?: string;
+  subject?: string;
+  chapter?: string;
+  topicIds?: string[];
 }
 
 export default function ChatPage() {
@@ -103,11 +108,14 @@ export default function ChatPage() {
               </Button>
               <div>
                 <h1 className="text-xl font-bold text-gray-800">
-                  {chatData.mode === "user-topic" 
+                  {chatData.mode === "task" 
+                    ? `${chatData.subject} - ${chatData.chapter}`
+                    : chatData.mode === "user-topic" 
                     ? chatData.topicName 
                     : `${chatData.topics?.length || 0} Topics Selected`}
                 </h1>
                 <p className="text-sm text-gray-600">
+                  {chatData.mode === "task" && "🎯 Study Task"}
                   {chatData.source === "teacher-import" && "📚 Teacher's Content"}
                   {chatData.source === "student" && "📖 My Content"}
                   {chatData.source === "manual" && "✨ AI Generated"}

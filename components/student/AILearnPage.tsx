@@ -63,11 +63,12 @@ export default function AILearnPage() {
       case "user-topic": return "AI Generated";
       case "student-content": return "My Content";
       case "teacher-content": return "Teacher Content";
+      case "task": return "Study Tasks";
       default: return "Unknown";
     }
   };
 
-  const modes = ["all", "user-topic", "student-content", "teacher-content"];
+  const modes = ["all", "task", "user-topic", "student-content", "teacher-content"];
 
   const filteredChats = chats.filter(
     (chat) => selectedMode === "all" || chat.mode === selectedMode
