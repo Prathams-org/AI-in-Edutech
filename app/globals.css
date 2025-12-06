@@ -120,3 +120,74 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* --- Custom themes --- */
+:root.theme-ocean {
+  --page-grad: linear-gradient(135deg,#0ea5e9 0%, #7dd3fc 50%, #8b5cf6 100%);
+  --card-bg: rgba(255,255,255,0.7);
+  --accent-1: #06b6d4;
+  --accent-2: #7c3aed;
+}
+:root.theme-sunset {
+  --page-grad: linear-gradient(135deg,#fb7185 0%, #f97316 50%, #f59e0b 100%);
+  --card-bg: rgba(255,255,255,0.78);
+  --accent-1: #ef4444;
+  --accent-2: #f97316;
+}
+:root.theme-aurora {
+  --page-grad: linear-gradient(135deg,#60a5fa 0%, #a78bfa 40%, #06b6d4 100%);
+  --card-bg: rgba(10,10,10,0.5);
+  --accent-1: #60a5fa;
+  --accent-2: #a78bfa;
+}
+
+/* Gradient animated text */
+.gradient-text {
+  background-image: linear-gradient(90deg,#7c3aed,#06b6d4,#ec4899,#f59e0b);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradientShift 6s linear infinite;
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Glass card */
+.glass-card {
+  background: var(--card-bg, rgba(255,255,255,0.7));
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* Button micro-interactions */
+.btn-animated {
+  transition: transform .22s cubic-bezier(.2,.9,.2,1), box-shadow .22s, opacity .18s;
+}
+.btn-animated:active { transform: translateY(1px) scale(.995); }
+
+/* Floating decorative blobs */
+.blob {
+  position: absolute;
+  filter: blur(24px) saturate(140%);
+  opacity: .85;
+  transform: translate3d(0,0,0);
+}
+.blob-1 { width: 360px; height: 360px; left: -80px; top: -40px; background: radial-gradient(circle at 30% 30%, rgba(99,102,241,0.9), rgba(59,130,246,0.6)); animation: floaty 8s ease-in-out infinite; }
+.blob-2 { width: 300px; height: 300px; right: -60px; bottom: -100px; background: radial-gradient(circle at 70% 60%, rgba(236,72,153,0.9), rgba(250,204,21,0.6)); animation: floaty 10s ease-in-out infinite reverse; }
+@keyframes floaty { 0% { transform: translateY(0px) } 50% { transform: translateY(-18px) } 100% { transform: translateY(0px) } }
+
+/* Small spinner */
+.spinner {
+  border: 3px solid rgba(255,255,255,0.18);
+  border-top-color: rgba(255,255,255,0.9);
+  border-radius: 9999px;
+  width: 18px; height: 18px;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
